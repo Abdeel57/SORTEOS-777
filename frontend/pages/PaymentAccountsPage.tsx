@@ -18,7 +18,30 @@ const PaymentAccountsPage = () => {
 
     useEffect(() => {
         getSettings().then(settings => {
-            setAccounts(settings.paymentAccounts || []);
+            // Normalizar paymentAccounts para asegurar que siempre sea un array válido
+            let normalizedAccounts: PaymentAccount[] = [];
+            if (settings.paymentAccounts) {
+                if (Array.isArray(settings.paymentAccounts)) {
+                    normalizedAccounts = settings.paymentAccounts.map((acc: any, index: number) => ({
+                        id: acc.id || `payment-${index}`,
+                        bank: acc.bank || acc.bankName || '',
+                        paymentMethod: acc.paymentMethod || '',
+                        card: acc.card || '',
+                        accountNumber: acc.accountNumber || '',
+                        interbankKey: acc.interbankKey || '',
+                        paymentConcept: acc.paymentConcept || '',
+                        accountHolder: acc.accountHolder || '',
+                    })).filter((acc: PaymentAccount) => {
+                        // Filtrar cuentas sin datos mínimos
+                        return acc.bank && acc.accountNumber && acc.accountHolder;
+                    });
+                }
+            }
+            setAccounts(normalizedAccounts);
+            setLoading(false);
+        }).catch(error => {
+            console.error('Error loading payment accounts:', error);
+            setAccounts([]);
             setLoading(false);
         });
     }, []);

@@ -158,7 +158,28 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                 })) || []
             });
                 setRaffle(raffleData || null);
-                setPaymentAccounts(settingsData.paymentAccounts || []);
+                
+                // Normalizar paymentAccounts para asegurar que siempre sea un array válido
+                let normalizedAccounts: PaymentAccount[] = [];
+                if (settingsData.paymentAccounts) {
+                    if (Array.isArray(settingsData.paymentAccounts)) {
+                        normalizedAccounts = settingsData.paymentAccounts.map((acc: any, index: number) => ({
+                            id: acc.id || `payment-${index}`,
+                            bank: acc.bank || acc.bankName || '',
+                            paymentMethod: acc.paymentMethod || '',
+                            card: acc.card || '',
+                            accountNumber: acc.accountNumber || '',
+                            interbankKey: acc.interbankKey || '',
+                            paymentConcept: acc.paymentConcept || '',
+                            accountHolder: acc.accountHolder || '',
+                        })).filter((acc: PaymentAccount) => {
+                            // Filtrar cuentas sin datos mínimos
+                            return acc.bank && acc.accountNumber && acc.accountHolder;
+                        });
+                    }
+                }
+                setPaymentAccounts(normalizedAccounts);
+                
                 // Usar número por defecto si no existe contactInfo
                 setContactWhatsapp(settingsData.contactInfo?.whatsapp || '521234567890');
                 

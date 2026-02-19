@@ -324,6 +324,36 @@ export const getSettings = async (): Promise<Settings> => {
         if (response.ok) {
             const data = await response.json();
             console.log('✅ Backend settings loaded successfully');
+            
+            // Normalizar paymentAccounts para asegurar que siempre sea un array
+            if (data.paymentAccounts) {
+                // Si es null, undefined, o no es un array, convertirlo a array vacío
+                if (!Array.isArray(data.paymentAccounts)) {
+                    console.warn('⚠️ paymentAccounts no es un array, normalizando...', data.paymentAccounts);
+                    data.paymentAccounts = [];
+                } else {
+                    // Validar que cada elemento tenga la estructura correcta
+                    data.paymentAccounts = data.paymentAccounts.map((acc: any, index: number) => {
+                        // Asegurar que tenga todos los campos necesarios
+                        return {
+                            id: acc.id || `payment-${index}`,
+                            bank: acc.bank || acc.bankName || '',
+                            paymentMethod: acc.paymentMethod || '',
+                            card: acc.card || '',
+                            accountNumber: acc.accountNumber || '',
+                            interbankKey: acc.interbankKey || '',
+                            paymentConcept: acc.paymentConcept || '',
+                            accountHolder: acc.accountHolder || '',
+                        };
+                    }).filter((acc: any) => {
+                        // Filtrar cuentas sin datos mínimos
+                        return acc.bank && acc.accountNumber && acc.accountHolder;
+                    });
+                }
+            } else {
+                data.paymentAccounts = [];
+            }
+            
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);

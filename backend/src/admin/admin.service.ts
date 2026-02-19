@@ -1807,9 +1807,9 @@ export class AdminService {
         instagramUrl: settings.instagramUrl || '',
         tiktokUrl: settings.tiktokUrl || '',
       },
-      paymentAccounts: this.parseJsonField(settings.paymentAccounts),
-      faqs: this.parseJsonField(settings.faqs),
-      displayPreferences: this.parseJsonField(settings.displayPreferences),
+      paymentAccounts: this.parseJsonField(settings.paymentAccounts) || [],
+      faqs: this.parseJsonField(settings.faqs) || [],
+      displayPreferences: this.parseJsonField(settings.displayPreferences) || {},
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
