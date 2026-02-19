@@ -361,7 +361,22 @@ const AdminSettingsPage = () => {
                     instagramUrl: data.socialLinks?.instagramUrl || '',
                     tiktokUrl: data.socialLinks?.tiktokUrl || '',
                 },
-                paymentAccounts: data.paymentAccounts || [],
+                paymentAccounts: (data.paymentAccounts || []).map((acc: any, index: number) => {
+                    // Normalizar y validar cada cuenta de pago
+                    return {
+                        id: acc.id || `payment-${Date.now()}-${index}`,
+                        bank: acc.bank || acc.bankName || '',
+                        paymentMethod: acc.paymentMethod || '',
+                        card: acc.card || '',
+                        accountNumber: acc.accountNumber || '',
+                        interbankKey: acc.interbankKey || '',
+                        paymentConcept: acc.paymentConcept || '',
+                        accountHolder: acc.accountHolder || '',
+                    };
+                }).filter((acc: any) => {
+                    // Filtrar cuentas vacías o sin datos mínimos
+                    return acc.bank && acc.accountNumber && acc.accountHolder;
+                }),
                 faqs: data.faqs || [],
             };
             
