@@ -65,13 +65,64 @@ export class PublicService {
     }
   }
 
-  // Helper para asegurar que la tabla raffles existe (versión simplificada)
+  // Helper para asegurar que la tabla raffles existe y tiene todas las columnas necesarias
   private async ensureRafflesTable() {
     try {
+      // Verificar si la tabla existe
       await this.prisma.$queryRaw`SELECT 1 FROM "raffles" LIMIT 1`;
+      
+      // Verificar y agregar columnas faltantes
+      const columnsToCheck = [
+        { name: 'purchaseDescription', type: 'TEXT', nullable: true },
+        { name: 'gallery', type: 'JSONB', nullable: true },
+        { name: 'sold', type: 'INTEGER', nullable: false, defaultValue: '0' },
+        { name: 'status', type: 'TEXT', nullable: false, defaultValue: "'draft'" },
+        { name: 'slug', type: 'TEXT', nullable: true },
+        { name: 'packs', type: 'JSONB', nullable: true },
+        { name: 'bonuses', type: 'TEXT[]', nullable: true, defaultValue: "'{}'" },
+        { name: 'boletosConOportunidades', type: 'BOOLEAN', nullable: false, defaultValue: 'false' },
+        { name: 'numeroOportunidades', type: 'INTEGER', nullable: false, defaultValue: '1' },
+        { name: 'giftTickets', type: 'INTEGER', nullable: true },
+      ];
+      
+      for (const col of columnsToCheck) {
+        const colResult = await this.prisma.$queryRaw<Array<{column_name: string}>>`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'raffles' AND column_name = ${col.name}
+        `;
+        
+        if (colResult.length === 0) {
+          console.warn(`⚠️ raffles table missing ${col.name} column, adding it...`);
+          
+          let alterStatement = `ALTER TABLE "raffles" ADD COLUMN IF NOT EXISTS "${col.name}" ${col.type}`;
+          
+          if (col.defaultValue) {
+            alterStatement += ` DEFAULT ${col.defaultValue}`;
+          }
+          
+          if (!col.nullable) {
+            alterStatement += ` NOT NULL`;
+          }
+          
+          await this.prisma.$executeRawUnsafe(alterStatement);
+          console.log(`✅ Column ${col.name} added to raffles table`);
+        }
+      }
     } catch (error: any) {
-      // Si la tabla no existe, solo loguear el error pero no crear (debe ser creada por AdminService)
-      console.warn('⚠️ raffles table does not exist');
+      const isTableError = error.code === 'P2021' || 
+                          error.code === '42P01' || 
+                          error.message?.includes('does not exist') ||
+                          error.message?.includes('Unknown table') ||
+                          (error.message?.includes('relation') && error.message?.includes('does not exist'));
+      
+      if (isTableError) {
+        // Si la tabla no existe, solo loguear el error pero no crear (debe ser creada por AdminService)
+        console.warn('⚠️ raffles table does not exist');
+      } else {
+        // Si es otro error, re-lanzarlo
+        throw error;
+      }
     }
   }
 
