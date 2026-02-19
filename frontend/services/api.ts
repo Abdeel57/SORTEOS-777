@@ -1076,13 +1076,36 @@ export const adminGetUsers = async (): Promise<AdminUser[]> => {
 export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt' | 'updatedAt' | 'expiresAt'>): Promise<Order> => {
     try {
         console.log('🚀 Trying backend for create order...');
-        console.log('📤 Sending order data:', order);
+        
+        // Validar y normalizar datos antes de enviar
+        const validatedOrder = {
+            userId: order.userId || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            raffleId: order.raffleId,
+            tickets: Array.isArray(order.tickets) ? order.tickets : [],
+            total: typeof order.total === 'number' ? order.total : (order.totalAmount || 0),
+            paymentMethod: order.paymentMethod || 'transfer',
+            notes: order.notes || '',
+            userData: (order as any).userData || {}
+        };
+        
+        // Validar que los datos requeridos estén presentes
+        if (!validatedOrder.raffleId) {
+            throw new Error('raffleId es requerido');
+        }
+        if (!Array.isArray(validatedOrder.tickets) || validatedOrder.tickets.length === 0) {
+            throw new Error('Se requiere al menos un boleto');
+        }
+        if (!validatedOrder.total || validatedOrder.total <= 0) {
+            throw new Error('El total debe ser mayor a 0');
+        }
+        
+        console.log('📤 Sending order data:', validatedOrder);
         console.log('🌐 API URL:', `${API_URL}/public/orders`);
 
         const response = await fetch(`${API_URL}/public/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(order),
+            body: JSON.stringify(validatedOrder),
         });
 
         console.log('📡 Response status:', response.status);
@@ -1094,13 +1117,28 @@ export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt
             return parseOrderDates(data);
         } else {
             console.log('❌ Backend returned error status:', response.status);
-            const errorText = await response.text();
-            console.log('❌ Error details:', errorText);
-            throw new Error(`Backend error: ${response.status} - ${errorText}`);
+            let errorText = '';
+            try {
+                errorText = await response.text();
+                console.log('❌ Error details:', errorText);
+                
+                // Intentar parsear como JSON para obtener mensaje más específico
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    throw new Error(errorJson.message || errorJson.error || `Error ${response.status}: ${errorText}`);
+                } catch {
+                    throw new Error(`Backend error: ${response.status} - ${errorText}`);
+                }
+            } catch (parseError) {
+                throw new Error(`Error al crear la orden: ${response.status} ${response.statusText}`);
+            }
         }
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
-        throw error; // Re-throw para que el frontend maneje el error
+        console.error('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error; // Re-throw para que el frontend maneje el error
+        }
+        throw new Error('Error desconocido al crear la orden');
     }
 };
 
