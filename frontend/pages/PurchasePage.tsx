@@ -430,41 +430,86 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 </h3>
                                 
                                 <div className="space-y-4">
-                                    {paymentAccounts.map(acc => {
-                                        const copyAccountNumber = () => {
-                                            if (acc.accountNumber) {
-                                                navigator.clipboard.writeText(acc.accountNumber).then(() => {
-                                                    alert('Número de cuenta copiado al portapapeles');
-                                                });
-                                            }
-                                        };
-                                        
-                                        return (
-                                            <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <h4 className="font-bold text-white">{acc.bank}</h4>
-                                                </div>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-slate-400">Titular:</span>
-                                                        <span className="text-white font-semibold">{acc.accountHolder}</span>
-                                                    </div>
-                                                    {acc.accountNumber && (
-                                                        <div 
-                                                            className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
-                                                            onClick={copyAccountNumber}
-                                                            title="Click para copiar"
-                                                        >
-                                                            <span className="text-slate-400">No. Cuenta:</span>
-                                                            <span className="text-white font-mono hover:text-accent transition-colors">
-                                                                {acc.accountNumber} 📋
+                                    {paymentAccounts && paymentAccounts.length > 0 ? (
+                                        paymentAccounts.map(acc => {
+                                            // Compatibilidad con formato antiguo y nuevo
+                                            const bank = acc.bank || (acc as any).bankName || 'Banco';
+                                            const accountNumber = acc.accountNumber || acc.card || '';
+                                            const accountHolder = acc.accountHolder || '';
+                                            const paymentMethod = acc.paymentMethod || '';
+                                            const interbankKey = acc.interbankKey || '';
+                                            const paymentConcept = acc.paymentConcept || '';
+                                            
+                                            const copyAccountNumber = () => {
+                                                if (accountNumber) {
+                                                    navigator.clipboard.writeText(accountNumber).then(() => {
+                                                        alert('Número de cuenta copiado al portapapeles');
+                                                    });
+                                                }
+                                            };
+                                            
+                                            const copyCLABE = () => {
+                                                if (interbankKey) {
+                                                    navigator.clipboard.writeText(interbankKey).then(() => {
+                                                        alert('CLABE copiado al portapapeles');
+                                                    });
+                                                }
+                                            };
+                                            
+                                            return (
+                                                <div key={acc.id || Math.random()} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <h4 className="font-bold text-white">{bank}</h4>
+                                                        {paymentMethod && (
+                                                            <span className="text-xs text-slate-400 bg-slate-800/50 px-2 py-1 rounded">
+                                                                {paymentMethod}
                                                             </span>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
+                                                    <div className="space-y-2 text-sm">
+                                                        {accountHolder && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-slate-400">Titular:</span>
+                                                                <span className="text-white font-semibold">{accountHolder}</span>
+                                                            </div>
+                                                        )}
+                                                        {accountNumber && (
+                                                            <div 
+                                                                className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
+                                                                onClick={copyAccountNumber}
+                                                                title="Click para copiar"
+                                                            >
+                                                                <span className="text-slate-400">No. Cuenta:</span>
+                                                                <span className="text-white font-mono hover:text-accent transition-colors">
+                                                                    {accountNumber} 📋
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {interbankKey && (
+                                                            <div 
+                                                                className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
+                                                                onClick={copyCLABE}
+                                                                title="Click para copiar CLABE"
+                                                            >
+                                                                <span className="text-slate-400">CLABE:</span>
+                                                                <span className="text-white font-mono hover:text-accent transition-colors">
+                                                                    {interbankKey} 📋
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {paymentConcept && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-slate-400">Concepto:</span>
+                                                                <span className="text-white font-semibold text-xs">{paymentConcept}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })
+                                    ) : (
+                                        <p className="text-slate-400 text-sm">No hay métodos de pago configurados</p>
+                                    )}
                                 </div>
                             </div>
 
