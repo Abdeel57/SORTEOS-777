@@ -782,44 +782,124 @@ const AdminSettingsPage = () => {
 
                     {/* Payment Accounts Section */}
                     <OptimizedSectionWrapper
-                        title="Cuentas de Pago"
+                        title="Métodos de Pago"
                         icon={CreditCard}
-                        description="Configura las cuentas donde los usuarios pueden realizar pagos"
+                        description="Configura los métodos de pago con estilos personalizados por banco"
                     >
                         <div className="space-y-4">
                             {paymentFields.map((field, index) => (
-                                <div key={field.id} className="p-4 border border-gray-200 rounded-xl">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div key={field.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200 shadow-lg">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h4 className="text-lg font-bold text-gray-800">Método de Pago {index + 1}</h4>
+                                        {paymentFields.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removePayment(index)}
+                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className={labelClasses}>Nombre del Banco</label>
-                                            <input {...register(`paymentAccounts.${index}.bank`)} className={inputClasses} placeholder="Banco Atlántida" />
+                                            <label className={labelClasses}>Banco *</label>
+                                            <select {...register(`paymentAccounts.${index}.bank`)} className={inputClasses}>
+                                                <option value="">Selecciona un banco</option>
+                                                <option value="BBVA">BBVA</option>
+                                                <option value="Banorte">Banorte</option>
+                                                <option value="Santander">Santander</option>
+                                                <option value="Banamex">Banamex</option>
+                                                <option value="Citibanamex">Citibanamex</option>
+                                                <option value="HSBC">HSBC</option>
+                                                <option value="Scotiabank">Scotiabank</option>
+                                                <option value="Banregio">Banregio</option>
+                                                <option value="Inbursa">Inbursa</option>
+                                                <option value="Banco Azteca">Banco Azteca</option>
+                                                <option value="Bancoppel">Bancoppel</option>
+                                                <option value="OXXO">OXXO</option>
+                                                <option value="SPEI">SPEI</option>
+                                                <option value="Otro">Otro</option>
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-1">El banco determinará el estilo de la tarjeta</p>
                                         </div>
                                         <div>
-                                            <label className={labelClasses}>Número de Cuenta</label>
-                                            <input {...register(`paymentAccounts.${index}.accountNumber`)} className={inputClasses} placeholder="1234567890" />
+                                            <label className={labelClasses}>Método de Pago *</label>
+                                            <select {...register(`paymentAccounts.${index}.paymentMethod`)} className={inputClasses}>
+                                                <option value="">Selecciona método</option>
+                                                <option value="Transferencia">Transferencia</option>
+                                                <option value="Depósito">Depósito</option>
+                                                <option value="SPEI">SPEI</option>
+                                                <option value="OXXO Pay">OXXO Pay</option>
+                                                <option value="Tarjeta">Tarjeta</option>
+                                                <option value="Efectivo">Efectivo</option>
+                                            </select>
                                         </div>
                                         <div>
-                                            <label className={labelClasses}>Nombre del Titular</label>
-                                            <input {...register(`paymentAccounts.${index}.accountHolder`)} className={inputClasses} placeholder="Juan Pérez" />
+                                            <label className={labelClasses}>Número de Tarjeta (Opcional)</label>
+                                            <input 
+                                                {...register(`paymentAccounts.${index}.card`)} 
+                                                className={inputClasses}
+                                                placeholder="Ej: 1234 5678 9012 3456"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Si es tarjeta, ingresa el número completo</p>
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Número de Cuenta / CLABE *</label>
+                                            <input 
+                                                {...register(`paymentAccounts.${index}.accountNumber`)} 
+                                                className={inputClasses}
+                                                placeholder="Ej: 012345678901234567"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Clave Interbancaria (CLABE) (Opcional)</label>
+                                            <input 
+                                                {...register(`paymentAccounts.${index}.interbankKey`)} 
+                                                className={inputClasses}
+                                                placeholder="Ej: 012345678901234567"
+                                                maxLength={18}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">18 dígitos para transferencias SPEI</p>
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Concepto de Pago *</label>
+                                            <input 
+                                                {...register(`paymentAccounts.${index}.paymentConcept`)} 
+                                                className={inputClasses}
+                                                placeholder="Ej: Pago de rifa - Sorteos 777"
+                                                required
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Concepto que aparecerá en el comprobante</p>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className={labelClasses}>Titular de la Cuenta *</label>
+                                            <input 
+                                                {...register(`paymentAccounts.${index}.accountHolder`)} 
+                                                className={inputClasses}
+                                                placeholder="Nombre completo del titular"
+                                                required
+                                            />
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => removePayment(index)}
-                                        className="mt-3 flex items-center space-x-2 text-red-600 hover:text-red-700"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        <span>Eliminar</span>
-                                    </button>
                                 </div>
                             ))}
                             <button
                                 type="button"
-                                onClick={() => appendPayment({ bank: '', accountNumber: '', accountHolder: '' })}
-                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
+                                onClick={() => appendPayment({ 
+                                    bank: '', 
+                                    paymentMethod: '', 
+                                    card: '', 
+                                    accountNumber: '', 
+                                    interbankKey: '', 
+                                    paymentConcept: '', 
+                                    accountHolder: '' 
+                                })}
+                                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-all duration-200 flex items-center justify-center space-x-2"
                             >
-                                <Plus className="w-4 h-4" />
-                                <span>Agregar Cuenta de Pago</span>
+                                <Plus className="w-5 h-5" />
+                                <span>Agregar Método de Pago</span>
                             </button>
                         </div>
                     </OptimizedSectionWrapper>
