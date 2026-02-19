@@ -9,7 +9,7 @@ import { QrCode, Search } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
 
-type SearchType = 'numero_boleto' | 'folio';
+type SearchType = 'numero_boleto' | 'folio' | 'telefono';
 
 const VerifierPage = () => {
     const [searchParams] = useSearchParams();
@@ -65,6 +65,8 @@ const VerifierPage = () => {
                 return 'Ingresa el número de boleto (ej. 123)';
             case 'folio':
                 return 'Ingresa el folio (ej. LKSNP-XXXXX)';
+            case 'telefono':
+                return 'Ingresa el número telefónico (ej. 6621234567)';
             default:
                 return 'Ingresa tu búsqueda';
         }
@@ -95,6 +97,15 @@ const VerifierPage = () => {
                 criteria.numero_boleto = num;
             } else if (searchType === 'folio') {
                 criteria.folio = searchValue.trim();
+            } else if (searchType === 'telefono') {
+                // Limpiar el teléfono (quitar espacios, guiones, paréntesis, etc.)
+                const phone = searchValue.trim().replace(/\D/g, '');
+                if (phone.length < 10) {
+                    toast.error('Error', 'Por favor ingresa un número telefónico válido (mínimo 10 dígitos)');
+                    setIsLoading(false);
+                    return;
+                }
+                criteria.telefono = phone;
             }
             
             const result = await searchTickets(criteria);
@@ -191,7 +202,7 @@ const VerifierPage = () => {
             <div className="container mx-auto px-4 max-w-5xl py-12">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-white mb-4">Verificador de Boletos</h1>
-                    <p className="text-slate-300">Busca tus boletos por número de boleto, folio o escanea el código QR</p>
+                    <p className="text-slate-300">Busca tus boletos por número de boleto, folio, número telefónico o escanea el código QR</p>
                 </div>
                 
                 {/* Formulario de búsqueda */}
@@ -207,6 +218,7 @@ const VerifierPage = () => {
                                 >
                                     <option value="numero_boleto">Número de boleto</option>
                                     <option value="folio">Folio</option>
+                                    <option value="telefono">Número telefónico</option>
                                 </select>
                             </div>
                             <input
