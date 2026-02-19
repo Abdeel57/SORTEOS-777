@@ -1,0 +1,13 @@
+{
+  "clientName": "Sorteos 777",
+  "domain": "sorteos777.com",
+  "databaseUrl": "postgresql://usuario:password@host:puerto/database",
+  "admin": {
+    "username": "admin",
+    "password": "CambiarPassword123!",
+    "email": "admin@sorteos777.com",
+    "name": "Administrador Sorteos 777"
+  },
+  "instructions": "IMPORTANTE: Actualiza databaseUrl con la URL real de PostgreSQL antes de ejecutar: node scripts/apply-client-config.js"
+}
+
