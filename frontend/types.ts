@@ -82,9 +82,13 @@ export interface Order {
 
 export interface PaymentAccount {
     id: string;
-    bank: string;
-    accountNumber: string;
-    accountHolder: string;
+    bank: string; // Nombre del banco
+    paymentMethod: string; // Método de pago (Transferencia, Depósito, SPEI, etc.)
+    card?: string; // Número de tarjeta (opcional)
+    accountNumber: string; // Número de cuenta o CLABE
+    interbankKey?: string; // Clave interbancaria (CLABE)
+    paymentConcept: string; // Concepto de pago
+    accountHolder: string; // Titular de la cuenta
 }
 
 export interface FaqItemData {
