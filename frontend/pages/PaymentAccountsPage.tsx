@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, CreditCard, User, Copy, Check, Sparkles, Wallet, Hash, FileText } from 'lucide-react';
+import { Copy, Check, CreditCard } from 'lucide-react';
 import { getSettings } from '../services/api';
 import { PaymentAccount } from '../types';
 import PageAnimator from '../components/PageAnimator';
@@ -34,6 +34,13 @@ const PaymentAccountsPage = () => {
         }
     };
 
+    // Formatear número de tarjeta/cuenta con espacios cada 4 dígitos
+    const formatCardNumber = (number: string) => {
+        if (!number) return '';
+        const cleaned = number.replace(/\s/g, '');
+        return cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
+    };
+
     return (
         <PageAnimator>
             <div className="min-h-screen bg-background-primary relative overflow-hidden">
@@ -47,17 +54,13 @@ const PaymentAccountsPage = () => {
                 )}
 
                 <div className="container mx-auto px-4 max-w-6xl py-12 md:py-16 relative z-10">
-                    {/* Header mejorado */}
+                    {/* Header */}
                     <motion.div
                         initial={reduceAnimations ? {} : { opacity: 0, y: -20 }}
                         animate={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                         transition={reduceAnimations ? {} : { duration: 0.5 }}
                         className="text-center mb-12"
                     >
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                            <CreditCard className="w-8 h-8 md:w-10 md:h-10 text-action animate-pulse" />
-                            <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent" style={{ animationDelay: '0.5s' }} />
-                        </div>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                             <span className="bg-gradient-to-r from-action via-accent to-action bg-clip-text text-transparent">
                                 Métodos de Pago
@@ -80,6 +83,8 @@ const PaymentAccountsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                             {accounts.map((acc, index) => {
                                 const bankStyle = getBankStyle(acc.bank);
+                                const cardNumber = acc.card || acc.accountNumber;
+                                const displayNumber = formatCardNumber(cardNumber);
                                 
                                 return (
                                     <motion.div
@@ -88,215 +93,223 @@ const PaymentAccountsPage = () => {
                                         animate={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                                         transition={reduceAnimations ? {} : { delay: index * 0.1, duration: 0.5 }}
                                         whileHover={reduceAnimations ? {} : { y: -8, scale: 1.03 }}
-                                        className="relative group"
+                                        className="relative group perspective-1000"
                                     >
                                         {/* Efecto de resplandor en hover */}
                                         {!reduceAnimations && (
                                             <div 
-                                                className="absolute inset-0 rounded-3xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 -z-10"
+                                                className="absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 -z-10"
                                                 style={{ background: bankStyle.gradient }}
                                             />
                                         )}
                                         
-                                        {/* Tarjeta bancaria estilizada */}
+                                        {/* Tarjeta de débito estilizada */}
                                         <div 
-                                            className="relative rounded-3xl shadow-2xl overflow-hidden backdrop-blur-sm border-2 transition-all duration-300"
+                                            className="relative rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm transition-all duration-300 aspect-[1.586/1]"
                                             style={{
                                                 background: bankStyle.gradient,
-                                                borderColor: bankStyle.accentColor + '40',
+                                                minHeight: '240px',
                                             }}
                                         >
-                                            {/* Patrón de fondo decorativo */}
-                                            <div className="absolute inset-0 opacity-10">
-                                                <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl" />
-                                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full blur-2xl" />
-                                            </div>
-
-                                            {/* Líneas decorativas tipo tarjeta */}
-                                            <div className="absolute top-0 left-0 w-full h-20 opacity-20">
-                                                <div className="absolute top-4 left-4 w-12 h-1 bg-white rounded-full" />
-                                                <div className="absolute top-8 left-4 w-8 h-1 bg-white rounded-full" />
+                                            {/* Patrón de líneas onduladas decorativas */}
+                                            <div className="absolute inset-0 opacity-20">
+                                                <svg className="w-full h-full" viewBox="0 0 400 250" preserveAspectRatio="none">
+                                                    <path 
+                                                        d="M0,200 Q100,150 200,180 T400,160 L400,250 L0,250 Z" 
+                                                        fill="none" 
+                                                        stroke="white" 
+                                                        strokeWidth="2"
+                                                        opacity="0.3"
+                                                    />
+                                                    <path 
+                                                        d="M0,220 Q150,170 300,200 T400,180 L400,250 L0,250 Z" 
+                                                        fill="none" 
+                                                        stroke="white" 
+                                                        strokeWidth="1.5"
+                                                        opacity="0.2"
+                                                    />
+                                                </svg>
                                             </div>
 
                                             {/* Contenido de la tarjeta */}
-                                            <div className="relative z-10 p-6 md:p-8 min-h-[400px] flex flex-col">
-                                                {/* Header del banco */}
-                                                <div className="mb-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <div className="flex items-center gap-3">
-                                                            <div 
-                                                                className="p-3 rounded-xl backdrop-blur-sm border-2"
-                                                                style={{
-                                                                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                                    borderColor: bankStyle.accentColor + '60',
-                                                                }}
-                                                            >
-                                                                <Building2 className="w-6 h-6 md:w-7 md:h-7" style={{ color: bankStyle.textColor }} />
-                                                            </div>
-                                                            <div>
-                                                                <h2 className="text-xl md:text-2xl font-black" style={{ color: bankStyle.textColor }}>
-                                                                    {bankStyle.name}
-                                                                </h2>
-                                                                {acc.paymentMethod && (
-                                                                    <p className="text-sm opacity-80" style={{ color: bankStyle.textColor }}>
-                                                                        {acc.paymentMethod}
-                                                                    </p>
-                                                                )}
+                                            <div className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
+                                                {/* Parte superior - Chip y símbolos */}
+                                                <div className="flex items-start justify-between mb-4">
+                                                    {/* Chip EMV */}
+                                                    <div className="relative">
+                                                        <div 
+                                                            className="w-12 h-10 rounded-md flex items-center justify-center"
+                                                            style={{ 
+                                                                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)'
+                                                            }}
+                                                        >
+                                                            <div className="grid grid-cols-3 gap-0.5 w-8 h-6">
+                                                                {[...Array(9)].map((_, i) => (
+                                                                    <div 
+                                                                        key={i}
+                                                                        className="bg-black/30 rounded-sm"
+                                                                        style={{
+                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)'
+                                                                        }}
+                                                                    />
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                        <Sparkles 
-                                                            className="w-5 h-5 md:w-6 md:h-6 opacity-60" 
-                                                            style={{ color: bankStyle.accentColor }} 
-                                                        />
+                                                    </div>
+
+                                                    {/* Símbolo de pago sin contacto */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <div className="w-8 h-1 bg-white/80 rounded-full"></div>
+                                                            <div className="w-6 h-1 bg-white/80 rounded-full ml-1"></div>
+                                                            <div className="w-4 h-1 bg-white/80 rounded-full ml-2"></div>
+                                                            <div className="w-2 h-1 bg-white/80 rounded-full ml-3"></div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {/* Información de la cuenta */}
-                                                <div className="flex-1 space-y-4">
-                                                    {/* Titular */}
-                                                    <div 
-                                                        className="p-4 rounded-xl backdrop-blur-sm border-2"
-                                                        style={{
-                                                            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                                            borderColor: bankStyle.accentColor + '40',
-                                                        }}
-                                                    >
-                                                        <div className="flex items-start gap-3">
-                                                            <div 
-                                                                className="p-2 rounded-lg"
-                                                                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                                {/* Parte central - Información principal */}
+                                                <div className="flex-1 flex flex-col justify-center space-y-3">
+                                                    {/* Nombre del banco */}
+                                                    <div className="mb-2">
+                                                        <h3 
+                                                            className="text-lg md:text-xl font-bold tracking-wide"
+                                                            style={{ color: bankStyle.textColor }}
+                                                        >
+                                                            {bankStyle.name}
+                                                        </h3>
+                                                        {acc.paymentMethod && (
+                                                            <p 
+                                                                className="text-xs opacity-80 mt-0.5"
+                                                                style={{ color: bankStyle.textColor }}
                                                             >
-                                                                <User className="w-4 h-4 md:w-5 md:h-5" style={{ color: bankStyle.textColor }} />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-xs opacity-80 mb-1" style={{ color: bankStyle.textColor }}>Titular</p>
-                                                                <p className="text-base md:text-lg font-bold break-words" style={{ color: bankStyle.textColor }}>
-                                                                    {acc.accountHolder}
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                                {acc.paymentMethod}
+                                                            </p>
+                                                        )}
                                                     </div>
 
-                                                    {/* Número de cuenta/tarjeta */}
-                                                    <div 
-                                                        className="p-4 rounded-xl backdrop-blur-sm border-2"
-                                                        style={{
-                                                            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                                            borderColor: bankStyle.accentColor + '40',
-                                                        }}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-3 mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <CreditCard className="w-4 h-4 opacity-80" style={{ color: bankStyle.textColor }} />
-                                                                <p className="text-xs opacity-80" style={{ color: bankStyle.textColor }}>
-                                                                    {acc.card ? 'Tarjeta' : 'Cuenta'}
-                                                                </p>
-                                                            </div>
+                                                    {/* Número de tarjeta/cuenta */}
+                                                    <div className="relative">
+                                                        <div className="flex items-center justify-between">
+                                                            <p 
+                                                                className="text-lg md:text-xl font-mono tracking-widest select-all"
+                                                                style={{ 
+                                                                    color: bankStyle.textColor,
+                                                                    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                                                                    letterSpacing: '0.1em'
+                                                                }}
+                                                            >
+                                                                {displayNumber}
+                                                            </p>
                                                             <button
-                                                                onClick={() => copyToClipboard(acc.accountNumber || acc.card || '', acc.id, 'Número')}
-                                                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-300 text-xs font-semibold border-2 hover:scale-105"
+                                                                onClick={() => copyToClipboard(cardNumber, acc.id, 'Número')}
+                                                                className="ml-2 p-1.5 rounded-lg transition-all hover:scale-110"
                                                                 style={{
                                                                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                                    borderColor: bankStyle.accentColor + '60',
-                                                                    color: bankStyle.textColor,
+                                                                    backdropFilter: 'blur(10px)',
                                                                 }}
                                                                 title="Copiar número"
                                                             >
                                                                 {copiedId === `${acc.id}-Número` ? (
-                                                                    <>
-                                                                        <Check className="w-3.5 h-3.5" />
-                                                                        <span>Copiado</span>
-                                                                    </>
+                                                                    <Check className="w-4 h-4" style={{ color: bankStyle.textColor }} />
                                                                 ) : (
-                                                                    <>
-                                                                        <Copy className="w-3.5 h-3.5" />
-                                                                        <span>Copiar</span>
-                                                                    </>
+                                                                    <Copy className="w-4 h-4" style={{ color: bankStyle.textColor }} />
                                                                 )}
                                                             </button>
                                                         </div>
-                                                        <p className="text-lg md:text-xl font-black font-mono tracking-wider break-all select-all" style={{ color: bankStyle.textColor }}>
-                                                            {acc.card || acc.accountNumber}
-                                                        </p>
                                                     </div>
+                                                </div>
 
-                                                    {/* Clave interbancaria */}
-                                                    {acc.interbankKey && (
-                                                        <div 
-                                                            className="p-4 rounded-xl backdrop-blur-sm border-2"
-                                                            style={{
-                                                                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                                                borderColor: bankStyle.accentColor + '40',
-                                                            }}
-                                                        >
-                                                            <div className="flex items-center justify-between gap-3 mb-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Hash className="w-4 h-4 opacity-80" style={{ color: bankStyle.textColor }} />
-                                                                    <p className="text-xs opacity-80" style={{ color: bankStyle.textColor }}>CLABE</p>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => copyToClipboard(acc.interbankKey || '', acc.id, 'CLABE')}
-                                                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all duration-300 text-xs font-semibold border-2 hover:scale-105"
-                                                                    style={{
-                                                                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                                                        borderColor: bankStyle.accentColor + '60',
-                                                                        color: bankStyle.textColor,
-                                                                    }}
-                                                                    title="Copiar CLABE"
-                                                                >
-                                                                    {copiedId === `${acc.id}-CLABE` ? (
-                                                                        <>
-                                                                            <Check className="w-3.5 h-3.5" />
-                                                                            <span>Copiado</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Copy className="w-3.5 h-3.5" />
-                                                                            <span>Copiar</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            </div>
-                                                            <p className="text-base md:text-lg font-bold font-mono tracking-wider break-all select-all" style={{ color: bankStyle.textColor }}>
-                                                                {acc.interbankKey}
+                                                {/* Parte inferior - Información adicional */}
+                                                <div className="mt-4 space-y-2">
+                                                    {/* Titular */}
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p 
+                                                                className="text-xs opacity-70 mb-0.5 uppercase tracking-wider"
+                                                                style={{ color: bankStyle.textColor }}
+                                                            >
+                                                                Titular
+                                                            </p>
+                                                            <p 
+                                                                className="text-sm md:text-base font-semibold truncate"
+                                                                style={{ color: bankStyle.textColor }}
+                                                            >
+                                                                {acc.accountHolder}
                                                             </p>
                                                         </div>
-                                                    )}
+                                                    </div>
 
-                                                    {/* Concepto de pago */}
-                                                    {acc.paymentConcept && (
-                                                        <div 
-                                                            className="p-4 rounded-xl backdrop-blur-sm border-2"
-                                                            style={{
-                                                                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                                                borderColor: bankStyle.accentColor + '40',
-                                                            }}
-                                                        >
-                                                            <div className="flex items-start gap-3">
-                                                                <div 
-                                                                    className="p-2 rounded-lg"
-                                                                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                                    {/* CLABE y Concepto en una línea */}
+                                                    <div className="flex items-center justify-between gap-4 text-xs">
+                                                        {acc.interbankKey && (
+                                                            <div className="flex-1 min-w-0">
+                                                                <p 
+                                                                    className="opacity-70 mb-0.5 uppercase tracking-wider"
+                                                                    style={{ color: bankStyle.textColor }}
                                                                 >
-                                                                    <FileText className="w-4 h-4 md:w-5 md:h-5" style={{ color: bankStyle.textColor }} />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-xs opacity-80 mb-1" style={{ color: bankStyle.textColor }}>Concepto de Pago</p>
-                                                                    <p className="text-sm font-semibold break-words" style={{ color: bankStyle.textColor }}>
-                                                                        {acc.paymentConcept}
+                                                                    CLABE
+                                                                </p>
+                                                                <div className="flex items-center gap-1">
+                                                                    <p 
+                                                                        className="font-mono truncate"
+                                                                        style={{ color: bankStyle.textColor }}
+                                                                    >
+                                                                        {acc.interbankKey}
                                                                     </p>
+                                                                    <button
+                                                                        onClick={() => copyToClipboard(acc.interbankKey || '', acc.id, 'CLABE')}
+                                                                        className="p-1 rounded transition-all hover:scale-110"
+                                                                        style={{
+                                                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                                                        }}
+                                                                        title="Copiar CLABE"
+                                                                    >
+                                                                        {copiedId === `${acc.id}-CLABE` ? (
+                                                                            <Check className="w-3 h-3" style={{ color: bankStyle.textColor }} />
+                                                                        ) : (
+                                                                            <Copy className="w-3 h-3" style={{ color: bankStyle.textColor }} />
+                                                                        )}
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Footer de la tarjeta */}
-                                                <div className="mt-6 pt-4 border-t-2" style={{ borderColor: bankStyle.accentColor + '40' }}>
-                                                    <p className="text-xs opacity-70 text-center" style={{ color: bankStyle.textColor }}>
-                                                        Envía tu comprobante por WhatsApp
-                                                    </p>
+                                                        )}
+                                                        
+                                                        {acc.paymentConcept && (
+                                                            <div className="flex-1 min-w-0 text-right">
+                                                                <p 
+                                                                    className="opacity-70 mb-0.5 uppercase tracking-wider"
+                                                                    style={{ color: bankStyle.textColor }}
+                                                                >
+                                                                    Concepto
+                                                                </p>
+                                                                <p 
+                                                                    className="font-semibold truncate"
+                                                                    style={{ color: bankStyle.textColor }}
+                                                                >
+                                                                    {acc.paymentConcept}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
+
+                                            {/* Sombra de la tarjeta */}
+                                            <div 
+                                                className="absolute inset-0 rounded-2xl pointer-events-none"
+                                                style={{
+                                                    boxShadow: '0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Nota debajo de la tarjeta */}
+                                        <div className="mt-3 text-center">
+                                            <p className="text-xs text-slate-400">
+                                                Envía tu comprobante por WhatsApp
+                                            </p>
                                         </div>
                                     </motion.div>
                                 );
