@@ -7,7 +7,7 @@
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
   # IMPORTANTE: Actualiza esta URL con la URL real de tu backend en Railway
-  VITE_API_URL = "https://TU-BACKEND-RAILWAY.up.railway.app/api"
+  VITE_API_URL = "https://sorteos-777-production.up.railway.app/api"
 
 # Optimización: Solo hacer build si hay cambios en frontend
 [build.processing]
@@ -29,7 +29,7 @@
 [[redirects]]
   from = "/api/*"
   # IMPORTANTE: Actualiza esta URL con la URL real de tu backend en Railway
-  to = "https://TU-BACKEND-RAILWAY.up.railway.app/api/:splat"
+  to = "https://sorteos-777-production.up.railway.app/api/:splat"
   status = 200
 
 [[redirects]]
