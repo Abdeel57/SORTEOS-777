@@ -1,7 +1,7 @@
 {
   "clientName": "Sorteos 777",
   "domain": "sorteos777.com",
-  "databaseUrl": "postgresql://usuario:password@host:puerto/database",
+  "databaseUrl": "postgresql://postgres:FiFBeTBFvqgGLPrBMjpwlOHjpiHPVlAa@yamabiko.proxy.rlwy.net:48336/railway",
   "admin": {
     "username": "admin",
     "password": "CambiarPassword123!",

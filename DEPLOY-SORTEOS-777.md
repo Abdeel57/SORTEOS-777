@@ -85,28 +85,56 @@ cd backend && npm run start:prod
 
 Después del primer deploy, ejecuta las migraciones:
 
+**📖 Guía Detallada:** Consulta `GUIA-MIGRACIONES-Y-ADMIN.md` para instrucciones completas.
+
+**⚡ Método Rápido:**
+
 1. En Railway, ve a tu servicio backend
-2. Ve a **Settings** → **Deploy**
-3. Busca **"Run Command"** o usa la terminal
-4. Ejecuta:
+2. Click en **"Terminal"** o **"Shell"** (botón en la parte superior)
+3. Ejecuta:
    ```bash
    cd backend && npx prisma migrate deploy
    ```
 
+**Resultado esperado:**
+```
+✅ Migraciones aplicadas exitosamente
+```
+
+**🆘 Si hay problemas:** Verifica que `DATABASE_URL` esté configurada correctamente en Railway.
+
 ### 2.6 Crear Usuario Administrador
 
-1. En Railway, abre la terminal del servicio
-2. Ejecuta:
+**📖 Guía Detallada:** Consulta `GUIA-MIGRACIONES-Y-ADMIN.md` para instrucciones completas.
+
+**⚡ Método Rápido:**
+
+1. En Railway, en la misma terminal del paso anterior
+2. Ejecuta (reemplaza la contraseña con una segura):
    ```bash
-   cd backend
    node scripts/create-admin-user.js admin TuPasswordSeguro123! admin@sorteos777.com "Administrador Sorteos 777"
    ```
+
+**⚠️ IMPORTANTE:** 
+- Reemplaza `TuPasswordSeguro123!` con una contraseña segura
+- Guarda las credenciales en un lugar seguro
+
+**Resultado esperado:**
+```
+🔐 Creando usuario administrador...
+   Usuario: admin
+   Email: admin@sorteos777.com
+   Nombre: Administrador Sorteos 777
+✅ Usuario administrador creado exitosamente!
+```
 
 **O desde tu máquina local:**
 ```bash
 cd backend
 node scripts/create-admin-user.js admin TuPasswordSeguro123! admin@sorteos777.com "Administrador Sorteos 777"
 ```
+
+**Nota:** Para usar desde local, necesitas tener `DATABASE_URL` configurada en `backend/.env`.
 
 ### 2.7 Obtener URL del Backend
 

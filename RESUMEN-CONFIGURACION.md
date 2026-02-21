@@ -200,3 +200,4 @@ Solo falta:
 3. Actualizar las URLs en netlify.toml
 4. Hacer el deploy en Netlify
 
+

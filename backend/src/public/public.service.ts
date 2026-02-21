@@ -332,13 +332,36 @@ export class PublicService {
 
       console.log('🔧 Getting settings from database...');
 
-      const settings = await this.prisma.settings.findUnique({
-        where: { id: 'main_settings' },
-      });
+      // ── Asegurar que las columnas nuevas existan ANTES de cualquier query Prisma ──
+      // Esto evita que el Prisma Client (regenerado con nuevos campos) falle porque
+      // 'phoneNumbers'/'phoneNextIndex' todavía no existen en la BD de Railway.
+      try {
+        await this.prisma.$executeRaw`
+          ALTER TABLE "settings"
+            ADD COLUMN IF NOT EXISTS "phoneNumbers" JSONB,
+            ADD COLUMN IF NOT EXISTS "phoneNextIndex" INTEGER DEFAULT 0
+        `;
+      } catch (_) {
+        // Ignorar – las columnas ya existen o la tabla no existe aún
+      }
+
+      let settings: any = null;
+
+      try {
+        settings = await this.prisma.settings.findUnique({
+          where: { id: 'main_settings' },
+        });
+      } catch (prismaErr) {
+        console.warn('⚠️ Prisma findUnique falló, usando raw SQL fallback:', prismaErr);
+        // Fallback raw SQL – siempre devuelve los datos reales sin importar el schema
+        const rows = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM "settings" WHERE "id" = 'main_settings'
+        `;
+        settings = rows?.[0] ?? null;
+      }
 
       if (!settings) {
         console.log('⚠️ No settings found, creating default settings');
-        // Create default settings if they don't exist
         const newSettings = await this.prisma.settings.create({
           data: {
             id: 'main_settings',
@@ -353,22 +376,30 @@ export class PublicService {
           },
         });
 
-        // Guardar en cache (TTL: 30 minutos = 1800 segundos)
         await this.cacheService.set(cacheKey, newSettings, 1800);
-        console.log('💾 Settings guardados en cache');
-
         return this.formatSettingsResponse(newSettings);
       }
 
-      // Guardar en cache (TTL: 30 minutos = 1800 segundos)
       await this.cacheService.set(cacheKey, settings, 1800);
-      console.log('💾 Settings guardados en cache');
-
-      console.log('✅ Settings found:', settings);
+      console.log('✅ Settings found');
       return this.formatSettingsResponse(settings);
     } catch (error) {
       console.error('❌ Error getting settings:', error);
-      // Return default settings if there's an error
+
+      // Último recurso: raw SQL – los datos reales siempre se preservan
+      try {
+        const rows = await this.prisma.$queryRaw<any[]>`
+          SELECT * FROM "settings" WHERE "id" = 'main_settings'
+        `;
+        if (rows?.[0]) {
+          console.log('✅ Settings recuperados via raw SQL fallback');
+          return this.formatSettingsResponse(rows[0]);
+        }
+      } catch (rawErr) {
+        console.error('❌ Raw SQL fallback también falló:', rawErr);
+      }
+
+      // Absoluto último recurso: defaults vacíos
       return {
         id: 'main_settings',
         siteName: 'Lucky Snap',
@@ -382,20 +413,11 @@ export class PublicService {
             action: '#0ea5e9',
           }
         },
-        contactInfo: {
-          whatsapp: '',
-          email: '',
-          emailFromName: '',
-          emailReplyTo: '',
-          emailSubject: '',
-        },
-        socialLinks: {
-          facebookUrl: '',
-          instagramUrl: '',
-          tiktokUrl: '',
-        },
+        contactInfo: { whatsapp: '', email: '', emailFromName: '', emailReplyTo: '', emailSubject: '' },
+        socialLinks: { facebookUrl: '', instagramUrl: '', tiktokUrl: '' },
         paymentAccounts: [],
         faqs: [],
+        phoneNumbers: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };

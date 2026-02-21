@@ -154,7 +154,7 @@ model Settings {
   
   // Multi-phone WhatsApp distribution
   phoneNumbers    Json?    // Array of PhoneNumber objects (name, phone, role, active, assignedRaffles)
-  phoneNextIndex  Int      @default(0) // Round-robin counter (incremented on each assignment)
+  phoneNextIndex  Int?     // Round-robin counter (incremented on each assignment, default 0)
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
