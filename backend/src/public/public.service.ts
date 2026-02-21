@@ -10,35 +10,35 @@ export class PublicService {
   constructor(
     private prisma: PrismaService,
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   // Helper para asegurar que la tabla users existe y tiene todas las columnas
   private async ensureUsersTable() {
     try {
       // Verificar si la tabla existe
       await this.prisma.$queryRaw`SELECT 1 FROM "users" LIMIT 1`;
-      
+
       // Verificar columnas necesarias
       const columnsToCheck = ['phone', 'district'];
       for (const col of columnsToCheck) {
-        const colResult = await this.prisma.$queryRaw<Array<{column_name: string}>>`
+        const colResult = await this.prisma.$queryRaw<Array<{ column_name: string }>>`
           SELECT column_name 
           FROM information_schema.columns 
           WHERE table_name = 'users' AND column_name = ${col}
         `;
-        
+
         if (colResult.length === 0) {
           console.warn(`⚠️ users table missing ${col} column, adding it...`);
           await this.prisma.$executeRawUnsafe(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "${col}" TEXT;`);
         }
       }
     } catch (error: any) {
-      const isTableError = error.code === 'P2021' || 
-                          error.code === '42P01' || 
-                          error.message?.includes('does not exist') ||
-                          error.message?.includes('Unknown table') ||
-                          (error.message?.includes('relation') && error.message?.includes('does not exist'));
-      
+      const isTableError = error.code === 'P2021' ||
+        error.code === '42P01' ||
+        error.message?.includes('does not exist') ||
+        error.message?.includes('Unknown table') ||
+        (error.message?.includes('relation') && error.message?.includes('does not exist'));
+
       if (isTableError) {
         console.warn('⚠️ users table does not exist, creating it...');
         await this.prisma.$executeRaw`
@@ -53,11 +53,11 @@ export class PublicService {
               CONSTRAINT "users_pkey" PRIMARY KEY ("id")
           );
         `;
-        
+
         await this.prisma.$executeRaw`
           CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
         `;
-        
+
         console.log('✅ users table created successfully');
       } else {
         throw error;
@@ -70,7 +70,7 @@ export class PublicService {
     try {
       // Verificar si la tabla existe
       await this.prisma.$queryRaw`SELECT 1 FROM "raffles" LIMIT 1`;
-      
+
       // Verificar y agregar columnas faltantes
       const columnsToCheck = [
         { name: 'purchaseDescription', type: 'TEXT', nullable: true },
@@ -84,38 +84,38 @@ export class PublicService {
         { name: 'numeroOportunidades', type: 'INTEGER', nullable: false, defaultValue: '1' },
         { name: 'giftTickets', type: 'INTEGER', nullable: true },
       ];
-      
+
       for (const col of columnsToCheck) {
-        const colResult = await this.prisma.$queryRaw<Array<{column_name: string}>>`
+        const colResult = await this.prisma.$queryRaw<Array<{ column_name: string }>>`
           SELECT column_name 
           FROM information_schema.columns 
           WHERE table_name = 'raffles' AND column_name = ${col.name}
         `;
-        
+
         if (colResult.length === 0) {
           console.warn(`⚠️ raffles table missing ${col.name} column, adding it...`);
-          
+
           let alterStatement = `ALTER TABLE "raffles" ADD COLUMN IF NOT EXISTS "${col.name}" ${col.type}`;
-          
+
           if (col.defaultValue) {
             alterStatement += ` DEFAULT ${col.defaultValue}`;
           }
-          
+
           if (!col.nullable) {
             alterStatement += ` NOT NULL`;
           }
-          
+
           await this.prisma.$executeRawUnsafe(alterStatement);
           console.log(`✅ Column ${col.name} added to raffles table`);
         }
       }
     } catch (error: any) {
-      const isTableError = error.code === 'P2021' || 
-                          error.code === '42P01' || 
-                          error.message?.includes('does not exist') ||
-                          error.message?.includes('Unknown table') ||
-                          (error.message?.includes('relation') && error.message?.includes('does not exist'));
-      
+      const isTableError = error.code === 'P2021' ||
+        error.code === '42P01' ||
+        error.message?.includes('does not exist') ||
+        error.message?.includes('Unknown table') ||
+        (error.message?.includes('relation') && error.message?.includes('does not exist'));
+
       if (isTableError) {
         // Si la tabla no existe, solo loguear el error pero no crear (debe ser creada por AdminService)
         console.warn('⚠️ raffles table does not exist');
@@ -139,22 +139,22 @@ export class PublicService {
             END IF;
         END $$;
       `;
-      
+
       await this.prisma.$queryRaw`SELECT 1 FROM "orders" LIMIT 1`;
     } catch (error: any) {
-      const isTableError = error.code === 'P2021' || 
-                          error.code === '42P01' || 
-                          error.message?.includes('does not exist') ||
-                          error.message?.includes('Unknown table') ||
-                          (error.message?.includes('relation') && error.message?.includes('does not exist'));
-      
+      const isTableError = error.code === 'P2021' ||
+        error.code === '42P01' ||
+        error.message?.includes('does not exist') ||
+        error.message?.includes('Unknown table') ||
+        (error.message?.includes('relation') && error.message?.includes('does not exist'));
+
       if (isTableError) {
         console.warn('⚠️ orders table does not exist, creating it...');
-        
+
         // Asegurar que users existe primero
         await this.ensureUsersTable();
         await this.ensureRafflesTable();
-        
+
         await this.prisma.$executeRaw`
           CREATE TABLE IF NOT EXISTS "orders" (
               "id" TEXT NOT NULL,
@@ -172,23 +172,23 @@ export class PublicService {
               CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
           );
         `;
-        
+
         await this.prisma.$executeRaw`
           CREATE UNIQUE INDEX IF NOT EXISTS "orders_folio_key" ON "orders"("folio");
         `;
-        
+
         await this.prisma.$executeRaw`
           CREATE INDEX IF NOT EXISTS "orders_raffleId_idx" ON "orders"("raffleId");
         `;
-        
+
         await this.prisma.$executeRaw`
           CREATE INDEX IF NOT EXISTS "orders_userId_idx" ON "orders"("userId");
         `;
-        
+
         await this.prisma.$executeRaw`
           CREATE INDEX IF NOT EXISTS "orders_status_idx" ON "orders"("status");
         `;
-        
+
         console.log('✅ orders table created successfully');
       } else {
         throw error;
@@ -198,7 +198,7 @@ export class PublicService {
 
   async getActiveRaffles() {
     const cacheKey = 'raffles:active';
-    
+
     // Intentar obtener del cache
     const cached = await this.cacheService.get<any[]>(cacheKey);
     if (cached) {
@@ -221,7 +221,7 @@ export class PublicService {
 
   async getRaffleBySlug(slug: string) {
     const cacheKey = `raffle:slug:${slug}`;
-    
+
     // Intentar obtener del cache
     const cached = await this.cacheService.get<any>(cacheKey);
     if (cached) {
@@ -253,7 +253,7 @@ export class PublicService {
   ) {
     // Asegurar que orders existe
     await this.ensureOrdersTable();
-    
+
     const offset = Math.max(0, options?.offset ?? 0);
     const rawLimit = options?.limit;
     const limit = typeof rawLimit === 'number' && rawLimit > 0 ? Math.min(rawLimit, 2000) : undefined;
@@ -299,7 +299,7 @@ export class PublicService {
 
   async getPastWinners() {
     const cacheKey = 'winners:all';
-    
+
     // Intentar obtener del cache
     const cached = await this.cacheService.get<any[]>(cacheKey);
     if (cached) {
@@ -321,7 +321,7 @@ export class PublicService {
 
   async getSettings() {
     const cacheKey = 'settings:main';
-    
+
     try {
       // Intentar obtener del cache
       const cached = await this.cacheService.get<any>(cacheKey);
@@ -331,11 +331,11 @@ export class PublicService {
       }
 
       console.log('🔧 Getting settings from database...');
-      
+
       const settings = await this.prisma.settings.findUnique({
         where: { id: 'main_settings' },
       });
-      
+
       if (!settings) {
         console.log('⚠️ No settings found, creating default settings');
         // Create default settings if they don't exist
@@ -352,18 +352,18 @@ export class PublicService {
             faqs: JSON.stringify([]),
           },
         });
-        
+
         // Guardar en cache (TTL: 30 minutos = 1800 segundos)
         await this.cacheService.set(cacheKey, newSettings, 1800);
         console.log('💾 Settings guardados en cache');
-        
+
         return this.formatSettingsResponse(newSettings);
       }
 
       // Guardar en cache (TTL: 30 minutos = 1800 segundos)
       await this.cacheService.set(cacheKey, settings, 1800);
       console.log('💾 Settings guardados en cache');
-      
+
       console.log('✅ Settings found:', settings);
       return this.formatSettingsResponse(settings);
     } catch (error) {
@@ -437,6 +437,7 @@ export class PublicService {
       paymentAccounts: this.parseJsonField(settings.paymentAccounts) || [],
       faqs: this.parseJsonField(settings.faqs) || [],
       displayPreferences: this.parseJsonField(settings.displayPreferences) || {},
+      phoneNumbers: this.parseJsonField(settings.phoneNumbers) || [],
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
@@ -445,20 +446,20 @@ export class PublicService {
   private parseJsonField(field: any) {
     try {
       if (!field) return [];
-      
+
       // Handle double serialization
       if (typeof field === 'string') {
         // Try to parse as JSON
         const parsed = JSON.parse(field);
-        
+
         // If it's still a string, parse again
         if (typeof parsed === 'string') {
           return JSON.parse(parsed);
         }
-        
+
         return parsed;
       }
-      
+
       return field;
     } catch (error) {
       console.error('❌ Error parsing JSON field:', error);
@@ -487,43 +488,43 @@ export class PublicService {
       console.error('❌ Error ensuring tables:', error);
       throw new Error(`Error al inicializar tablas: ${error.message}`);
     }
-    
+
     try {
       console.log('📝 Creating order with data:', orderData);
-      
+
       // Verificar que la rifa existe
       const raffle = await this.prisma.raffle.findUnique({ where: { id: orderData.raffleId } });
       if (!raffle) {
         throw new NotFoundException('Raffle not found');
       }
-      
+
       console.log('✅ Raffle found:', raffle.title);
-      
+
       // Lógica de múltiples oportunidades
       let ticketsToSave = orderData.tickets;
       if (raffle.boletosConOportunidades && raffle.numeroOportunidades > 1) {
         console.log(`🎁 Generando boletos adicionales: ${raffle.numeroOportunidades - 1} por cada boleto comprado`);
-        
+
         const totalEmisiones = raffle.tickets * raffle.numeroOportunidades;
         const boletosAdicionales: number[] = [];
-        
+
         // Obtener todas las órdenes existentes para evitar duplicados
         const existingOrders = await this.prisma.order.findMany({
           where: { raffleId: orderData.raffleId },
           select: { tickets: true }
         });
-        
+
         const ticketsUsados = new Set<number>();
         existingOrders.forEach(order => {
           order.tickets.forEach(ticket => ticketsUsados.add(ticket));
         });
-        
+
         // Añadir tickets de esta orden a los usados
         orderData.tickets.forEach(ticket => ticketsUsados.add(ticket));
-        
+
         console.log(`📊 Tickets ya usados: ${ticketsUsados.size}`);
         console.log(`📊 Rango total de emisiones: ${totalEmisiones}`);
-        
+
         // Para cada boleto comprado, generar boletos adicionales aleatorios
         for (const ticketNum of orderData.tickets) {
           for (let i = 0; i < raffle.numeroOportunidades - 1; i++) {
@@ -531,11 +532,11 @@ export class PublicService {
             let randomTicket: number;
             let attempts = 0;
             const maxAttempts = 1000; // Aumentado para escalas grandes
-            
+
             do {
               randomTicket = Math.floor(Math.random() * (totalEmisiones - raffle.tickets) + raffle.tickets + 1);
               attempts++;
-              
+
               // Prevenir bucle infinito
               if (attempts > maxAttempts) {
                 console.warn(`⚠️ No se pudo generar boleto único después de ${maxAttempts} intentos`);
@@ -544,29 +545,29 @@ export class PublicService {
                 break;
               }
             } while (ticketsUsados.has(randomTicket) || ticketNum === randomTicket || boletosAdicionales.includes(randomTicket));
-            
+
             if (attempts <= maxAttempts) {
               boletosAdicionales.push(randomTicket);
               ticketsUsados.add(randomTicket); // Marcar como usado
             }
           }
         }
-        
+
         // Combinar boletos originales con los adicionales
         ticketsToSave = [...orderData.tickets, ...boletosAdicionales];
         console.log(`✅ Boletos generados: ${ticketsToSave.length} total (${orderData.tickets.length} comprados + ${boletosAdicionales.length} de regalo)`);
         console.log(`📦 Boletos de regalo asignados: ${boletosAdicionales.join(', ')}`);
       }
-      
+
       // Crear o buscar el usuario
       let user;
       const userData = orderData.userData || {};
-      
+
       if (userData.email) {
         // Buscar usuario existente por email
         user = await this.prisma.user.findUnique({ where: { email: userData.email } });
       }
-      
+
       if (!user) {
         // Crear nuevo usuario
         user = await this.prisma.user.create({
@@ -581,7 +582,7 @@ export class PublicService {
       } else {
         console.log('✅ Existing user found:', user.id);
       }
-      
+
       // Crear la orden con todos los tickets (comprados + de regalo)
       const newOrder = await this.prisma.order.create({
         data: {
@@ -620,7 +621,7 @@ export class PublicService {
         code: error.code,
         stack: error.stack
       });
-      
+
       // Si es un error de tabla, intentar crear las tablas y reintentar
       if (error.code === 'P2021' || error.code === '42P01' || error.message?.includes('does not exist')) {
         console.warn('⚠️ Table error detected, attempting to fix...');
@@ -634,7 +635,7 @@ export class PublicService {
           console.error('❌ Error ensuring tables:', ensureError);
         }
       }
-      
+
       throw new Error(`Error al crear la orden: ${error.message || 'Error desconocido'}`);
     }
   }
@@ -687,9 +688,9 @@ export class PublicService {
 
       // Verificar estado del boleto
       const isValid = order.status === 'PAID';
-      const message = isValid 
-        ? 'Boleto válido y pagado' 
-        : order.status === 'PENDING' 
+      const message = isValid
+        ? 'Boleto válido y pagado'
+        : order.status === 'PENDING'
           ? 'Boleto apartado pero no pagado'
           : 'Boleto no válido';
 
@@ -716,7 +717,7 @@ export class PublicService {
   async generateTicketQR(ticketNumber: number, raffleId: string): Promise<string> {
     try {
       const QRCode = require('qrcode');
-      
+
       const qrData = {
         numero_boleto: ticketNumber,
         sorteo_id: raffleId,
@@ -739,37 +740,37 @@ export class PublicService {
   }) {
     try {
       console.log('🔍 Searching tickets with criteria:', criteria);
-      
+
       // Validar que al menos un criterio esté presente
       if (!criteria.numero_boleto && !criteria.nombre_cliente && !criteria.telefono && !criteria.folio) {
         throw new Error('Se requiere al menos un criterio de búsqueda');
       }
-      
+
       const where: any = {
         // Excluir órdenes canceladas y expiradas de la búsqueda pública
         status: {
           in: ['PENDING', 'PAID']
         }
       };
-      
+
       // Construir condiciones dinámicas
       if (criteria.numero_boleto) {
         where.tickets = {
           has: criteria.numero_boleto
         };
       }
-      
+
       // Construir condiciones de usuario
       if (criteria.nombre_cliente || criteria.telefono) {
         where.user = {};
-        
+
         if (criteria.nombre_cliente) {
           where.user.name = {
             contains: criteria.nombre_cliente,
             mode: 'insensitive'
           };
         }
-        
+
         if (criteria.telefono) {
           // Limpiar teléfono: solo números
           const phoneCleaned = criteria.telefono.replace(/\D/g, '');
@@ -778,14 +779,14 @@ export class PublicService {
           };
         }
       }
-      
+
       if (criteria.folio) {
         where.folio = {
           contains: criteria.folio,
           mode: 'insensitive'
         };
       }
-      
+
       // Buscar órdenes solo de sorteos activos
       const orders = await this.prisma.order.findMany({
         where: {
@@ -817,7 +818,7 @@ export class PublicService {
         },
         take: 50 // Límite recomendado
       });
-      
+
       if (orders.length === 0) {
         return {
           clientes: [],
@@ -825,10 +826,10 @@ export class PublicService {
           totalOrdenes: 0
         };
       }
-      
+
       // Agrupar órdenes por cliente (userId)
       const ordersByUser = new Map<string, typeof orders>();
-      
+
       orders.forEach(order => {
         const userId = order.userId;
         if (!ordersByUser.has(userId)) {
@@ -836,13 +837,13 @@ export class PublicService {
         }
         ordersByUser.get(userId)!.push(order);
       });
-      
+
       // Transformar a formato agrupado
       const clientesAgrupados = Array.from(ordersByUser.entries()).map(([userId, userOrders]) => {
         const primerOrder = userOrders[0];
         const totalBoletos = userOrders.reduce((sum, o) => sum + o.tickets.length, 0);
         const totalPagado = userOrders.reduce((sum, o) => sum + (o.status === 'PAID' ? o.total : 0), 0);
-        
+
         return {
           clienteId: userId,
           nombre: primerOrder.user.name || 'Sin nombre',
@@ -868,9 +869,9 @@ export class PublicService {
           }))
         };
       });
-      
+
       console.log(`✅ Found ${clientesAgrupados.length} clients with ${orders.length} orders`);
-      
+
       return {
         clientes: clientesAgrupados,
         totalClientes: clientesAgrupados.length,
@@ -885,7 +886,7 @@ export class PublicService {
   async getOrderByFolio(folio: string) {
     try {
       console.log('🔍 Getting order by folio:', folio);
-      
+
       const order = await this.prisma.order.findUnique({
         where: { folio },
         include: {

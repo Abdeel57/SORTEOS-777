@@ -1554,6 +1554,7 @@ export class AdminService {
         paymentAccounts,
         faqs,
         displayPreferences,
+        phoneNumbers,
       } = data;
 
       // Extract appearance data
@@ -1598,12 +1599,15 @@ export class AdminService {
         paymentAccounts: this.safeStringify(paymentAccounts),
         faqs: this.safeStringify(faqs),
         displayPreferences: this.safeStringify(displayPreferences),
+        phoneNumbers: this.safeStringify(phoneNumbers || []),
+        // phoneNextIndex is NOT reset on settings save – it's managed by getNextWhatsAppNumber
       };
 
       // Verificar si la tabla settings existe y tiene las columnas necesarias
       try {
-        // Verificar y agregar columnas de color de texto si no existen
+        // Verificar y agregar columnas (colores de texto + números de teléfono)
         await this.dbSetup.ensureSettingsTableColumns();
+        await this.dbSetup.ensurePhoneNumbersColumns();
 
         const result = await this.prisma.settings.upsert({
           where: { id: 'main_settings' },
@@ -1658,6 +1662,8 @@ export class AdminService {
                 "paymentAccounts" JSONB,
                 "faqs" JSONB,
                 "displayPreferences" JSONB,
+                "phoneNumbers" JSONB,
+                "phoneNextIndex" INTEGER NOT NULL DEFAULT 0,
                 "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
@@ -1674,6 +1680,9 @@ export class AdminService {
           const displayPreferencesJson = typeof settingsData.displayPreferences === 'string'
             ? settingsData.displayPreferences
             : JSON.stringify(settingsData.displayPreferences || {});
+          const phoneNumbersJson = typeof settingsData.phoneNumbers === 'string'
+            ? settingsData.phoneNumbers
+            : JSON.stringify(settingsData.phoneNumbers || []);
 
           // Insertar o actualizar usando SQL directo
           await this.prisma.$executeRaw`
@@ -1682,7 +1691,7 @@ export class AdminService {
               "primaryColor", "secondaryColor", "accentColor", "actionColor",
               "whatsapp", "email", "emailFromName", "emailReplyTo", "emailSubject",
               "facebookUrl", "instagramUrl", "tiktokUrl",
-              "paymentAccounts", "faqs", "displayPreferences",
+              "paymentAccounts", "faqs", "displayPreferences", "phoneNumbers",
               "createdAt", "updatedAt"
             ) VALUES (
               'main_settings',
@@ -1705,6 +1714,7 @@ export class AdminService {
               ${paymentAccountsJson}::jsonb,
               ${faqsJson}::jsonb,
               ${displayPreferencesJson}::jsonb,
+              ${phoneNumbersJson}::jsonb,
               CURRENT_TIMESTAMP,
               CURRENT_TIMESTAMP
             )
@@ -1728,6 +1738,7 @@ export class AdminService {
               "paymentAccounts" = EXCLUDED."paymentAccounts",
               "faqs" = EXCLUDED."faqs",
               "displayPreferences" = EXCLUDED."displayPreferences",
+              "phoneNumbers" = EXCLUDED."phoneNumbers",
               "updatedAt" = CURRENT_TIMESTAMP;
           `;
 
@@ -1789,7 +1800,6 @@ export class AdminService {
           backgroundSecondary: settings.secondaryColor || '#1f2937',
           accent: settings.accentColor || '#ec4899',
           action: settings.actionColor || '#0ea5e9',
-          // Nuevos campos opcionales de color de texto
           titleColor: settings.titleColor || undefined,
           subtitleColor: settings.subtitleColor || undefined,
           descriptionColor: settings.descriptionColor || undefined,
@@ -1810,9 +1820,66 @@ export class AdminService {
       paymentAccounts: this.parseJsonField(settings.paymentAccounts) || [],
       faqs: this.parseJsonField(settings.faqs) || [],
       displayPreferences: this.parseJsonField(settings.displayPreferences) || {},
+      phoneNumbers: this.parseJsonField(settings.phoneNumbers) || [],
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
+  }
+
+  /**
+   * Round-robin: selects the next active WhatsApp number with role='apartados'
+   * optionally filtered by raffleId assignment, then atomically increments the counter.
+   * Falls back to legacy `settings.whatsapp` if no phoneNumbers are configured.
+   */
+  async getNextWhatsAppNumber(raffleId?: string): Promise<{ phone: string; name: string } | null> {
+    try {
+      await this.dbSetup.ensurePhoneNumbersColumns();
+
+      const rows = await this.prisma.$queryRaw<any[]>`
+        SELECT "phoneNumbers", "phoneNextIndex", "whatsapp"
+        FROM "settings" WHERE "id" = 'main_settings'
+      `;
+
+      if (!rows || rows.length === 0) return null;
+
+      const row = rows[0];
+      const allPhones: any[] = this.parseJsonField(row.phoneNumbers) || [];
+
+      // Filter: active + role=apartados + (assignedRaffles is empty OR contains raffleId)
+      const eligible = allPhones.filter((p: any) => {
+        if (!p.active) return false;
+        if (p.role !== 'apartados') return false;
+        if (!p.assignedRaffles || p.assignedRaffles.length === 0) return true; // all raffles
+        if (raffleId && p.assignedRaffles.includes(raffleId)) return true;
+        return false;
+      });
+
+      // Fallback to legacy single whatsapp if no eligible numbers
+      if (eligible.length === 0) {
+        const legacyPhone = row.whatsapp || null;
+        return legacyPhone ? { phone: legacyPhone, name: 'Atención al Cliente' } : null;
+      }
+
+      // Pick next using stored index (mod eligible length)
+      const currentIndex = typeof row.phoneNextIndex === 'number' ? row.phoneNextIndex : 0;
+      const selectedIndex = currentIndex % eligible.length;
+      const selected = eligible[selectedIndex];
+
+      // Atomically increment the counter in DB
+      await this.prisma.$executeRaw`
+        UPDATE "settings" SET "phoneNextIndex" = ${currentIndex + 1} WHERE "id" = 'main_settings'
+      `;
+
+      // Invalidate settings cache so the new index is reflected if cache is read
+      await this.cacheService.invalidateSettings();
+
+      this.logger.log(`📱 WhatsApp round-robin: selected ${selected.name} (${selected.phone}), next index: ${currentIndex + 1}`);
+
+      return { phone: selected.phone, name: selected.name };
+    } catch (error) {
+      this.logger.error('❌ Error in getNextWhatsAppNumber:', error);
+      return null;
+    }
   }
 
   private parseJsonField(field: any) {

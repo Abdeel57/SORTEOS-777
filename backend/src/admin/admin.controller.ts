@@ -533,6 +533,19 @@ export class AdminController {
     }
   }
 
+  // WhatsApp round-robin – público (lo llama el cliente al apartar boletos)
+  @Public()
+  @Get('whatsapp/next')
+  async getNextWhatsApp(@Query('raffleId') raffleId?: string) {
+    try {
+      const result = await this.adminService.getNextWhatsAppNumber(raffleId);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('❌ Error getting next WhatsApp number:', error);
+      return { success: false, data: null };
+    }
+  }
+
   // Settings - solo admin y superadmin
   @Roles('admin', 'superadmin')
   @Post('settings')

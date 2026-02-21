@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
-import { getSettings, adminUpdateSettings } from '../../services/api';
-import { Settings, AppearanceSettings } from '../../types';
-import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye, Mail } from 'lucide-react';
+import { getSettings, adminUpdateSettings, getRaffles } from '../../services/api';
+import { Settings, AppearanceSettings, PhoneNumber, Raffle } from '../../types';
+import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye, Mail, Phone, Users, ShieldCheck, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../../components/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
 import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
 
-const OptimizedSectionWrapper: React.FC<{ 
-    title: string, 
-    icon: React.ElementType, 
+const OptimizedSectionWrapper: React.FC<{
+    title: string,
+    icon: React.ElementType,
     children: React.ReactNode,
-    description?: string 
+    description?: string
 }> = ({ title, icon: Icon, children, description }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -56,7 +56,7 @@ const SimpleColorPreview: React.FC<{
                         <p className="text-sm text-gray-600">Ve cómo se verán los cambios</p>
                     </div>
                 </div>
-                
+
                 <button
                     onClick={() => setIsPreviewOpen(!isPreviewOpen)}
                     className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -77,28 +77,28 @@ const SimpleColorPreview: React.FC<{
                             <h4 className="text-sm font-semibold text-gray-700 mb-3">Paleta de Colores Actual</h4>
                             <div className="grid grid-cols-4 gap-3">
                                 <div className="text-center">
-                                    <div 
+                                    <div
                                         className="w-full h-16 rounded-lg border shadow-sm"
                                         style={{ backgroundColor: primaryColor }}
                                     ></div>
                                     <p className="text-xs text-gray-600 mt-1">Primario</p>
                                 </div>
                                 <div className="text-center">
-                                    <div 
+                                    <div
                                         className="w-full h-16 rounded-lg border shadow-sm"
                                         style={{ backgroundColor: accentColor }}
                                     ></div>
                                     <p className="text-xs text-gray-600 mt-1">Acento</p>
                                 </div>
                                 <div className="text-center">
-                                    <div 
+                                    <div
                                         className="w-full h-16 rounded-lg border shadow-sm"
                                         style={{ backgroundColor: backgroundColor }}
                                     ></div>
                                     <p className="text-xs text-gray-600 mt-1">Fondo</p>
                                 </div>
                                 <div className="text-center">
-                                    <div 
+                                    <div
                                         className="w-full h-16 rounded-lg border shadow-sm"
                                         style={{ backgroundColor: secondaryBackgroundColor }}
                                     ></div>
@@ -170,24 +170,24 @@ const SimpleColorPresets: React.FC<{
                         className="p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all duration-200 hover:border-blue-500 hover:shadow-md"
                     >
                         <h4 className="font-semibold text-gray-900 mb-3">{preset.name}</h4>
-                        
+
                         <div className="flex space-x-2">
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-lg border shadow-sm"
                                 style={{ backgroundColor: preset.colors.primary }}
                                 title="Color primario"
                             ></div>
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-lg border shadow-sm"
                                 style={{ backgroundColor: preset.colors.accent }}
                                 title="Color de acento"
                             ></div>
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-lg border shadow-sm"
                                 style={{ backgroundColor: preset.colors.background }}
                                 title="Color de fondo"
                             ></div>
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-lg border shadow-sm"
                                 style={{ backgroundColor: preset.colors.secondaryBackground }}
                                 title="Color secundario"
@@ -214,15 +214,24 @@ const AdminSettingsPage = () => {
         background: '#111827',
         secondaryBackground: '#1f2937'
     });
+    const [availableRaffles, setAvailableRaffles] = useState<Raffle[]>([]);
 
     const { fields: paymentFields, append: appendPayment, remove: removePayment } = useFieldArray({ control, name: "paymentAccounts" });
     const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
+    const { fields: phoneFields, append: appendPhone, remove: removePhone } = useFieldArray({ control, name: "phoneNumbers" });
 
     useEffect(() => {
+        // Load raffles for phone assignment dropdown
+        getRaffles().then(raffles => {
+            setAvailableRaffles(raffles || []);
+        }).catch(() => {
+            setAvailableRaffles([]);
+        });
+
         getSettings().then(data => {
             // Guardar settings en estado para usarlo en los placeholders
             setSettings(data);
-            
+
             // Inicializar preview de colores
             if (data.appearance?.colors) {
                 setPreviewColors({
@@ -316,18 +325,18 @@ const AdminSettingsPage = () => {
         });
         handleColorChange(preset.colors);
     };
-    
+
     const onSubmit = async (data: Settings) => {
         setSaving(true);
         try {
             console.log('🔧 Saving settings:', data);
-            
+
             // Usar valores del formulario o estado local como fallback
             const formDisplayPrefs = data.displayPreferences || {
                 listingMode,
                 paidTicketsVisibility,
             };
-            
+
             // Validate data before sending
             // Usar logo como favicon automáticamente
             const logoUrl = data.appearance?.logo || '';
@@ -378,11 +387,19 @@ const AdminSettingsPage = () => {
                     return acc.bank && acc.accountNumber && acc.accountHolder;
                 }),
                 faqs: data.faqs || [],
+                phoneNumbers: (data.phoneNumbers || []).map((p: any, i: number) => ({
+                    id: p.id || `phone-${Date.now()}-${i}`,
+                    name: p.name || '',
+                    phone: p.phone || '',
+                    role: p.role || 'apartados',
+                    active: p.active !== false,
+                    assignedRaffles: Array.isArray(p.assignedRaffles) ? p.assignedRaffles : [],
+                })),
             };
-            
+
             const result = await adminUpdateSettings(validatedData);
             console.log('✅ Settings saved successfully:', result);
-            
+
             // Parsear displayPreferences si viene como string
             let resultDisplayPrefs = result.displayPreferences;
             if (typeof resultDisplayPrefs === 'string') {
@@ -393,7 +410,7 @@ const AdminSettingsPage = () => {
                     resultDisplayPrefs = formDisplayPrefs;
                 }
             }
-            
+
             // Actualizar estados locales desde la respuesta
             if (resultDisplayPrefs) {
                 const listing = resultDisplayPrefs.listingMode || 'paginado';
@@ -401,18 +418,18 @@ const AdminSettingsPage = () => {
                 setListingMode(listing);
                 setPaidTicketsVisibility(visibility);
             }
-            
+
             // Reset del formulario con datos parseados
             reset({
                 ...result,
                 displayPreferences: resultDisplayPrefs || formDisplayPrefs
             });
-            
+
             if (result.appearance) {
                 console.log('🎨 Updating appearance in real-time...');
                 updateAppearance(result.appearance);
             }
-            
+
             // Show success message
             alert(`✅ Configuración guardada con éxito!\n\nCambios aplicados:\n- Apariencia: ${result.appearance?.siteName || 'N/A'}\n- Contacto: ${result.contactInfo?.whatsapp ? 'WhatsApp configurado' : 'Sin WhatsApp'}\n- Redes: ${Object.values(result.socialLinks || {}).filter(Boolean).length} redes configuradas`);
         } catch (error) {
@@ -478,7 +495,7 @@ const AdminSettingsPage = () => {
                                 <label className={labelClasses}>Nombre del Sitio</label>
                                 <input {...register('appearance.siteName', { required: true })} className={inputClasses} />
                             </div>
-                            
+
                             <div>
                                 <label className={labelClasses}>Logo del Sitio</label>
                                 <Controller
@@ -521,9 +538,9 @@ const AdminSettingsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className={labelClasses}>Color Primario</label>
-                                <input 
-                                    type="color" 
-                                    {...register('appearance.colors.action')} 
+                                <input
+                                    type="color"
+                                    {...register('appearance.colors.action')}
                                     className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                     onChange={(e) => {
                                         const newColors = { ...previewColors, primary: e.target.value };
@@ -533,12 +550,12 @@ const AdminSettingsPage = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Color principal para botones y elementos destacados</p>
                             </div>
-                            
+
                             <div>
                                 <label className={labelClasses}>Color de Acento</label>
-                                <input 
-                                    type="color" 
-                                    {...register('appearance.colors.accent')} 
+                                <input
+                                    type="color"
+                                    {...register('appearance.colors.accent')}
                                     className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                     onChange={(e) => {
                                         const newColors = { ...previewColors, accent: e.target.value };
@@ -548,12 +565,12 @@ const AdminSettingsPage = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Color secundario para elementos especiales</p>
                             </div>
-                            
+
                             <div>
                                 <label className={labelClasses}>Color de Fondo Principal</label>
-                                <input 
-                                    type="color" 
-                                    {...register('appearance.colors.backgroundPrimary')} 
+                                <input
+                                    type="color"
+                                    {...register('appearance.colors.backgroundPrimary')}
                                     className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                     onChange={(e) => {
                                         const newColors = { ...previewColors, background: e.target.value };
@@ -563,12 +580,12 @@ const AdminSettingsPage = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Color de fondo principal de la página</p>
                             </div>
-                            
+
                             <div>
                                 <label className={labelClasses}>Color de Fondo Secundario</label>
-                                <input 
-                                    type="color" 
-                                    {...register('appearance.colors.backgroundSecondary')} 
+                                <input
+                                    type="color"
+                                    {...register('appearance.colors.backgroundSecondary')}
                                     className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                     onChange={(e) => {
                                         const newColors = { ...previewColors, secondaryBackground: e.target.value };
@@ -590,9 +607,9 @@ const AdminSettingsPage = () => {
                                 <div>
                                     <label className={labelClasses}>Color de Títulos</label>
                                     <div className="flex gap-2 items-center">
-                                        <input 
-                                            type="color" 
-                                            {...register('appearance.colors.titleColor')} 
+                                        <input
+                                            type="color"
+                                            {...register('appearance.colors.titleColor')}
                                             className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                         />
                                         <button
@@ -610,9 +627,9 @@ const AdminSettingsPage = () => {
                                 <div>
                                     <label className={labelClasses}>Color de Subtítulos</label>
                                     <div className="flex gap-2 items-center">
-                                        <input 
-                                            type="color" 
-                                            {...register('appearance.colors.subtitleColor')} 
+                                        <input
+                                            type="color"
+                                            {...register('appearance.colors.subtitleColor')}
                                             className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                         />
                                         <button
@@ -630,9 +647,9 @@ const AdminSettingsPage = () => {
                                 <div>
                                     <label className={labelClasses}>Color de Descripciones</label>
                                     <div className="flex gap-2 items-center">
-                                        <input 
-                                            type="color" 
-                                            {...register('appearance.colors.descriptionColor')} 
+                                        <input
+                                            type="color"
+                                            {...register('appearance.colors.descriptionColor')}
                                             className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
                                         />
                                         <button
@@ -679,29 +696,29 @@ const AdminSettingsPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className={labelClasses}>Nombre del Remitente</label>
-                                <input 
-                                    {...register('contactInfo.emailFromName')} 
-                                    className={inputClasses} 
-                                    placeholder={settings?.appearance?.siteName || "Lucky Snap"} 
+                                <input
+                                    {...register('contactInfo.emailFromName')}
+                                    className={inputClasses}
+                                    placeholder={settings?.appearance?.siteName || "Lucky Snap"}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Nombre que aparece como remitente en los emails</p>
                             </div>
                             <div>
                                 <label className={labelClasses}>Email de Respuesta (Reply-To)</label>
-                                <input 
-                                    {...register('contactInfo.emailReplyTo')} 
+                                <input
+                                    {...register('contactInfo.emailReplyTo')}
                                     type="email"
-                                    className={inputClasses} 
-                                    placeholder="respuesta@ejemplo.com" 
+                                    className={inputClasses}
+                                    placeholder="respuesta@ejemplo.com"
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Email donde recibirás las respuestas (opcional)</p>
                             </div>
                             <div className="md:col-span-2">
                                 <label className={labelClasses}>Asunto por Defecto</label>
-                                <input 
-                                    {...register('contactInfo.emailSubject')} 
-                                    className={inputClasses} 
-                                    placeholder={`Información de ${settings?.appearance?.siteName || 'Lucky Snap'}`} 
+                                <input
+                                    {...register('contactInfo.emailSubject')}
+                                    className={inputClasses}
+                                    placeholder={`Información de ${settings?.appearance?.siteName || 'Lucky Snap'}`}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Asunto que se usará por defecto en emails automáticos</p>
                             </div>
@@ -795,7 +812,210 @@ const AdminSettingsPage = () => {
                         </div>
                     </OptimizedSectionWrapper>
 
+                    {/* ── Phone Numbers Section ─────────────────────────────── */}
+                    <OptimizedSectionWrapper
+                        title="Números de WhatsApp"
+                        icon={Phone}
+                        description="Distribución automática (round-robin) de mensajes de apartado entre tus agentes"
+                    >
+                        <div className="space-y-4">
+                            {/* Info banner */}
+                            <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
+                                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <Phone className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-green-800">Distribución Inteligente</p>
+                                    <p className="text-xs text-green-700 mt-0.5">
+                                        Los números con rol <strong>Apartados</strong> reciben mensajes de boletos reservados por turno (round-robin).
+                                        Los de <strong>Atención</strong> solo aparecen en el feed público (footer/contacto). El campo WhatsApp de arriba sigue funcionando como fallback.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {phoneFields.map((field, index) => {
+                                const currentRole = watch(`phoneNumbers.${index}.role`) as string;
+                                const currentActive = watch(`phoneNumbers.${index}.active`);
+                                const currentRaffles = watch(`phoneNumbers.${index}.assignedRaffles`) as string[] || [];
+                                return (
+                                    <div key={field.id} className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 border-2 shadow-md transition-all duration-200 ${currentActive !== false ? 'border-green-300' : 'border-gray-200 opacity-60'}`}>
+                                        {/* Header row */}
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2.5 h-2.5 rounded-full ${currentActive !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                <span className="font-semibold text-gray-800 text-sm">Número {index + 1}</span>
+                                                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${currentRole === 'atencion' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                                    {currentRole === 'atencion' ? '🔵 Atención' : '🟢 Apartados'}
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removePhone(index)}
+                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                                title="Eliminar número"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Name */}
+                                            <div>
+                                                <label className={labelClasses}>Nombre / Agente *</label>
+                                                <input
+                                                    {...register(`phoneNumbers.${index}.name`)}
+                                                    className={inputClasses}
+                                                    placeholder="Ej: Soporte WhatsApp, Carlos, Ventas"
+                                                />
+                                            </div>
+                                            {/* Phone */}
+                                            <div>
+                                                <label className={labelClasses}>Número de WhatsApp *</label>
+                                                <input
+                                                    {...register(`phoneNumbers.${index}.phone`)}
+                                                    className={inputClasses}
+                                                    placeholder="521234567890 (con código de país)"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">México: 52 + 10 dígitos</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Role & Active toggles */}
+                                        <div className="flex flex-wrap gap-4 mt-4">
+                                            {/* Role toggle */}
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium text-gray-700">Rol:</span>
+                                                <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
+                                                    <Controller
+                                                        control={control}
+                                                        name={`phoneNumbers.${index}.role`}
+                                                        render={({ field: f }) => (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => f.onChange('apartados')}
+                                                                    className={`px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1 ${f.value === 'apartados' ? 'bg-green-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                                                >
+                                                                    <Users className="w-3 h-3" /> Apartados
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => f.onChange('atencion')}
+                                                                    className={`px-3 py-1.5 text-xs font-semibold transition-colors border-l border-gray-300 flex items-center gap-1 ${f.value === 'atencion' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                                                >
+                                                                    <ShieldCheck className="w-3 h-3" /> Atención
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Active toggle */}
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-sm font-medium text-gray-700">Estado:</span>
+                                                <Controller
+                                                    control={control}
+                                                    name={`phoneNumbers.${index}.active`}
+                                                    render={({ field: f }) => (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => f.onChange(!f.value)}
+                                                            className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors focus:outline-none ${f.value !== false ? 'bg-green-500' : 'bg-gray-300'}`}
+                                                        >
+                                                            <span className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform ${f.value !== false ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                        </button>
+                                                    )}
+                                                />
+                                                <span className={`text-xs font-medium ${currentActive !== false ? 'text-green-600' : 'text-gray-400'}`}>
+                                                    {currentActive !== false ? 'Activo' : 'Inactivo'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Raffle assignment – only for 'apartados' role */}
+                                        {currentRole === 'apartados' && (
+                                            <div className="mt-4">
+                                                <label className={labelClasses}>Asignación de Rifas</label>
+                                                <Controller
+                                                    control={control}
+                                                    name={`phoneNumbers.${index}.assignedRaffles`}
+                                                    render={({ field: f }) => {
+                                                        const val: string[] = Array.isArray(f.value) ? f.value : [];
+                                                        const isAll = val.length === 0;
+                                                        return (
+                                                            <div className="space-y-2">
+                                                                {/* All raffles toggle */}
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => f.onChange([])}
+                                                                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${isAll ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                                                    >
+                                                                        ✅ Todas las rifas
+                                                                    </button>
+                                                                    <span className="text-xs text-gray-400">ó selecciona rifas específicas:</span>
+                                                                </div>
+                                                                {/* Raffle checkboxes */}
+                                                                {availableRaffles.length > 0 ? (
+                                                                    <div className="flex flex-wrap gap-2 mt-1">
+                                                                        {availableRaffles.map(r => {
+                                                                            const checked = val.includes(r.id);
+                                                                            return (
+                                                                                <button
+                                                                                    key={r.id}
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (checked) {
+                                                                                            f.onChange(val.filter(id => id !== r.id));
+                                                                                        } else {
+                                                                                            f.onChange([...val, r.id]);
+                                                                                        }
+                                                                                    }}
+                                                                                    className={`px-2.5 py-1 text-xs rounded-lg border transition-all ${checked ? 'bg-indigo-100 border-indigo-400 text-indigo-800 font-semibold' : 'bg-white border-gray-300 text-gray-600 hover:border-indigo-300'}`}
+                                                                                >
+                                                                                    {checked ? '✓ ' : ''}{r.title}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-xs text-gray-400 italic">No hay rifas disponibles</p>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }}
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    "Todas las rifas" = este número recibe mensajes de cualquier rifa. Selecciona rifas específicas para restringirlo.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Add phone button */}
+                            <button
+                                type="button"
+                                onClick={() => appendPhone({
+                                    id: `phone-${Date.now()}`,
+                                    name: '',
+                                    phone: '',
+                                    role: 'apartados',
+                                    active: true,
+                                    assignedRaffles: [],
+                                })}
+                                className="w-full py-3 border-2 border-dashed border-green-300 text-green-700 hover:border-green-400 hover:bg-green-50 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-semibold text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Agregar Número de WhatsApp
+                            </button>
+                        </div>
+                    </OptimizedSectionWrapper>
+
                     {/* Payment Accounts Section */}
+
                     <OptimizedSectionWrapper
                         title="Métodos de Pago"
                         icon={CreditCard}
@@ -852,8 +1072,8 @@ const AdminSettingsPage = () => {
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Número de Tarjeta (Opcional)</label>
-                                            <input 
-                                                {...register(`paymentAccounts.${index}.card`)} 
+                                            <input
+                                                {...register(`paymentAccounts.${index}.card`)}
                                                 className={inputClasses}
                                                 placeholder="Ej: 1234 5678 9012 3456"
                                             />
@@ -861,8 +1081,8 @@ const AdminSettingsPage = () => {
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Número de Cuenta / CLABE *</label>
-                                            <input 
-                                                {...register(`paymentAccounts.${index}.accountNumber`)} 
+                                            <input
+                                                {...register(`paymentAccounts.${index}.accountNumber`)}
                                                 className={inputClasses}
                                                 placeholder="Ej: 012345678901234567"
                                                 required
@@ -870,8 +1090,8 @@ const AdminSettingsPage = () => {
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Clave Interbancaria (CLABE) (Opcional)</label>
-                                            <input 
-                                                {...register(`paymentAccounts.${index}.interbankKey`)} 
+                                            <input
+                                                {...register(`paymentAccounts.${index}.interbankKey`)}
                                                 className={inputClasses}
                                                 placeholder="Ej: 012345678901234567"
                                                 maxLength={18}
@@ -880,8 +1100,8 @@ const AdminSettingsPage = () => {
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Concepto de Pago *</label>
-                                            <input 
-                                                {...register(`paymentAccounts.${index}.paymentConcept`)} 
+                                            <input
+                                                {...register(`paymentAccounts.${index}.paymentConcept`)}
                                                 className={inputClasses}
                                                 placeholder="Ej: Pago de rifa - Sorteos 777"
                                                 required
@@ -890,8 +1110,8 @@ const AdminSettingsPage = () => {
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className={labelClasses}>Titular de la Cuenta *</label>
-                                            <input 
-                                                {...register(`paymentAccounts.${index}.accountHolder`)} 
+                                            <input
+                                                {...register(`paymentAccounts.${index}.accountHolder`)}
                                                 className={inputClasses}
                                                 placeholder="Nombre completo del titular"
                                                 required
@@ -902,14 +1122,14 @@ const AdminSettingsPage = () => {
                             ))}
                             <button
                                 type="button"
-                                onClick={() => appendPayment({ 
-                                    bank: '', 
-                                    paymentMethod: '', 
-                                    card: '', 
-                                    accountNumber: '', 
-                                    interbankKey: '', 
-                                    paymentConcept: '', 
-                                    accountHolder: '' 
+                                onClick={() => appendPayment({
+                                    bank: '',
+                                    paymentMethod: '',
+                                    card: '',
+                                    accountNumber: '',
+                                    interbankKey: '',
+                                    paymentConcept: '',
+                                    accountHolder: ''
                                 })}
                                 className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-all duration-200 flex items-center justify-center space-x-2"
                             >

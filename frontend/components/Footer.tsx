@@ -9,15 +9,15 @@ import { formatPhoneNumberForMexico } from '../utils/phoneUtils';
 
 // Icono de TikTok personalizado
 const TikTokIcon = ({ size = 24 }: { size?: number }) => (
-    <svg 
-        width={size} 
-        height={size} 
-        viewBox="0 0 24 24" 
-        fill="currentColor" 
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
         style={{ display: 'inline-block' }}
     >
-        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
     </svg>
 );
 
@@ -33,6 +33,15 @@ const Footer = () => {
 
     const { contactInfo, socialLinks } = settings;
 
+    // Derive the public contact WhatsApp:
+    // 1st pick: first active 'atencion' number from phoneNumbers
+    // 2nd pick: first active 'apartados' number (if no atencion one)
+    // 3rd pick: legacy contactInfo.whatsapp
+    const atencionPhone = (settings.phoneNumbers || []).find(p => p.active && p.role === 'atencion')
+        ?? (settings.phoneNumbers || []).find(p => p.active && p.role === 'apartados')
+        ?? null;
+    const publicWhatsapp = atencionPhone?.phone || contactInfo?.whatsapp || '';
+
     return (
         <footer className="relative bg-gradient-to-b from-background-secondary via-slate-900/80 to-background-secondary mt-20 pt-12 pb-8 border-t border-slate-700/30 overflow-hidden">
             {/* Efecto de fondo decorativo - reducido en móviles */}
@@ -42,7 +51,7 @@ const Footer = () => {
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-action/10 rounded-full blur-3xl" />
                 </>
             )}
-            
+
             <div className="container mx-auto px-4 relative z-10">
                 {/* Header del Footer */}
                 <motion.div
@@ -65,7 +74,7 @@ const Footer = () => {
                 {/* Sección principal del Footer */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-10 max-w-6xl mx-auto">
                     {/* Contacto */}
-                    {(contactInfo?.whatsapp || contactInfo?.email) && (
+                    {(publicWhatsapp || contactInfo?.email) && (
                         <motion.div
                             initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
                             whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
@@ -78,9 +87,9 @@ const Footer = () => {
                                 Contáctanos
                             </h4>
                             <div className="flex flex-col gap-3 flex-grow">
-                                {contactInfo.whatsapp && (
+                                {publicWhatsapp && (
                                     <motion.a
-                                        href={`https://wa.me/${formatPhoneNumberForMexico(contactInfo.whatsapp) || contactInfo.whatsapp.replace(/\D/g, '')}`}
+                                        href={`https://wa.me/${formatPhoneNumberForMexico(publicWhatsapp) || publicWhatsapp.replace(/\D/g, '')}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center md:justify-start gap-3 px-4 py-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all duration-300 group"
@@ -88,7 +97,7 @@ const Footer = () => {
                                         whileTap={reduceAnimations ? {} : { scale: 0.98 }}
                                     >
                                         <MessageCircle className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors flex-shrink-0" />
-                                        <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">WhatsApp</span>
+                                        <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">WhatsApp{atencionPhone?.name ? ` · ${atencionPhone.name}` : ''}</span>
                                     </motion.a>
                                 )}
                                 {contactInfo.email && (
@@ -172,20 +181,20 @@ const Footer = () => {
                     >
                         <h4 className="text-white font-bold text-lg mb-5">Enlaces Rápidos</h4>
                         <div className="flex flex-col gap-2.5 flex-grow justify-start">
-                            <Link 
-                                to="/terminos" 
+                            <Link
+                                to="/terminos"
                                 className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Términos y Condiciones
                             </Link>
-                            <Link 
-                                to="/verificador" 
+                            <Link
+                                to="/verificador"
                                 className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Verificar Folio
                             </Link>
-                            <Link 
-                                to="/cuentas-de-pago" 
+                            <Link
+                                to="/cuentas-de-pago"
                                 className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Cuentas de Pago

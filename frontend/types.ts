@@ -91,6 +91,15 @@ export interface PaymentAccount {
     accountHolder: string; // Titular de la cuenta
 }
 
+export interface PhoneNumber {
+    id: string;
+    name: string;           // Nombre del agente / propósito
+    phone: string;          // Número (ej: 521234567890)
+    role: 'apartados' | 'atencion'; // Rol del número
+    active: boolean;        // Si está activo para recibir mensajes
+    assignedRaffles: string[]; // IDs de rifas asignadas; [] = todas
+}
+
 export interface FaqItemData {
     id: string;
     question: string;
@@ -138,6 +147,7 @@ export interface Settings {
     paymentAccounts: PaymentAccount[];
     faqs: FaqItemData[];
     displayPreferences?: DisplayPreferences;
+    phoneNumbers?: PhoneNumber[];
 }
 
 export interface AdminUser {

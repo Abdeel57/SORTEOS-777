@@ -324,7 +324,7 @@ export const getSettings = async (): Promise<Settings> => {
         if (response.ok) {
             const data = await response.json();
             console.log('✅ Backend settings loaded successfully');
-            
+
             // Normalizar paymentAccounts para asegurar que siempre sea un array
             if (data.paymentAccounts) {
                 // Si es null, undefined, o no es un array, convertirlo a array vacío
@@ -353,7 +353,7 @@ export const getSettings = async (): Promise<Settings> => {
             } else {
                 data.paymentAccounts = [];
             }
-            
+
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);
@@ -1076,7 +1076,7 @@ export const adminGetUsers = async (): Promise<AdminUser[]> => {
 export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt' | 'updatedAt' | 'expiresAt'>): Promise<Order> => {
     try {
         console.log('🚀 Trying backend for create order...');
-        
+
         // Validar y normalizar datos antes de enviar
         const validatedOrder = {
             userId: order.userId || `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1087,7 +1087,7 @@ export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt
             notes: order.notes || '',
             userData: (order as any).userData || {}
         };
-        
+
         // Validar que los datos requeridos estén presentes
         if (!validatedOrder.raffleId) {
             throw new Error('raffleId es requerido');
@@ -1098,7 +1098,7 @@ export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt
         if (!validatedOrder.total || validatedOrder.total <= 0) {
             throw new Error('El total debe ser mayor a 0');
         }
-        
+
         console.log('📤 Sending order data:', validatedOrder);
         console.log('🌐 API URL:', `${API_URL}/public/orders`);
 
@@ -1121,7 +1121,7 @@ export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt
             try {
                 errorText = await response.text();
                 console.log('❌ Error details:', errorText);
-                
+
                 // Intentar parsear como JSON para obtener mensaje más específico
                 try {
                     const errorJson = JSON.parse(errorText);
@@ -1461,3 +1461,23 @@ export const adminLogin = async (username: string, password: string): Promise<{ 
         access_token: loginData.access_token
     };
 }
+
+/**
+ * Obtiene el siguiente número de WhatsApp para el round-robin de mensajes de apartado.
+ * No requiere autenticación; es llamado por el cliente cuando va a enviar su comprobante.
+ * @param raffleId ID de la rifa (para filtrar por asignación de rifa)
+ * @returns { phone, name } del agente seleccionado o null si no hay números configurados
+ */
+export const getNextWhatsAppForOrder = async (
+    raffleId?: string
+): Promise<{ phone: string; name: string } | null> => {
+    try {
+        const params = raffleId ? `?raffleId=${encodeURIComponent(raffleId)}` : '';
+        const response = await fetch(`${API_URL}/admin/whatsapp/next${params}`);
+        if (!response.ok) return null;
+        const result = await response.json();
+        return result?.data ?? null;
+    } catch {
+        return null;
+    }
+};
