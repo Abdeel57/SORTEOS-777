@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Order, Settings } from '../../types';
+import { formatTicketNumber } from '../../utils/formatTicketNumber';
 
 interface ReceiptGeneratorProps {
     order: Order;
@@ -130,7 +131,7 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ order, settings }) 
                                 fontWeight: 'bold'
                             }}
                         >
-                            #{ticket.toString().padStart(4, '0')}
+                            #{formatTicketNumber(ticket, (order as any).raffle?.tickets ?? 9999)}
                         </span>
                     ))}
                 </div>

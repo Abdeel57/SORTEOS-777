@@ -5,6 +5,7 @@ import { Order, Settings } from '../types';
 import { getOrderByFolio, getSettings } from '../services/api';
 import Spinner from '../components/Spinner';
 import PageAnimator from '../components/PageAnimator';
+import { formatTicketNumber } from '../utils/formatTicketNumber';
 
 const ReceiptPage: React.FC = () => {
     const { folio } = useParams<{ folio: string }>();
@@ -208,7 +209,7 @@ const ReceiptPage: React.FC = () => {
                                         key={index}
                                         className="inline-block px-4 py-2 bg-gray-900 text-white rounded-lg font-bold text-sm"
                                     >
-                                        #{ticket.toString().padStart(4, '0')}
+                                        #{formatTicketNumber(ticket, (order as any).raffle?.tickets ?? 9999)}
                                     </span>
                                 ))}
                             </div>

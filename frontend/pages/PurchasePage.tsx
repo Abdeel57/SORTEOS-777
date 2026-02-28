@@ -10,6 +10,7 @@ import BonusesCard from '../components/BonusesCard';
 import { Link } from 'react-router-dom';
 import metaPixelService from '../services/metaPixel';
 import { formatPhoneNumberForMexico } from '../utils/phoneUtils';
+import { formatTicketNumber } from '../utils/formatTicketNumber';
 import { useTheme } from '../contexts/ThemeContext';
 import { DesignSystemUtils } from '../utils/design-system-utils';
 
@@ -750,7 +751,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                             <div className="flex flex-wrap gap-2">
                                                 {assignedPackTickets.map(t => (
                                                     <span key={t} className="bg-gradient-to-r from-accent to-action px-3 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                                        #{t.toString().padStart(3, '0')}
+                                                        #{formatTicketNumber(t, raffle?.tickets ?? 9999)}
                                                     </span>
                                                 ))}
                                             </div>
@@ -766,7 +767,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                     <div className="flex flex-wrap gap-2 mb-3">
                                         {initialTickets.map(t => (
                                             <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                                #{t.toString().padStart(3, '0')}
+                                                #{formatTicketNumber(t, raffle?.tickets ?? 9999)}
                                             </span>
                                         ))}
                                     </div>

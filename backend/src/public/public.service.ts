@@ -831,7 +831,8 @@ export class PublicService {
             select: {
               id: true,
               title: true,
-              status: true
+              status: true,
+              tickets: true
             }
           }
         },
@@ -879,7 +880,8 @@ export class PublicService {
             folio: order.folio,
             rifa: {
               id: order.raffle.id,
-              titulo: order.raffle.title
+              titulo: order.raffle.title,
+              tickets: order.raffle.tickets ?? 0
             },
             boletos: order.tickets,
             cantidadBoletos: order.tickets.length,
@@ -919,6 +921,7 @@ export class PublicService {
               price: true,
               status: true,
               slug: true,
+              tickets: true,
             },
           },
           user: {

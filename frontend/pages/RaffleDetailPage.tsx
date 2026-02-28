@@ -509,6 +509,7 @@ const RaffleDetailPage = () => {
                     <CasinoSpinResult
                         selectedTickets={selectedTickets}
                         totalPrice={selectedTickets.length * pricePerTicket}
+                        totalTickets={raffle.tickets}
                         onBuy={handleBuyRandom}
                         onSpinAgain={handleSpinAgain}
                         onClose={() => setShowSpinResult(false)}

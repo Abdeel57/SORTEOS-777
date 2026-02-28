@@ -3,6 +3,7 @@ import { Order, OrderStatus } from '../types';
 import { format } from 'date-fns';
 // FIX: Corrected import path for 'es' locale.
 import { es } from 'date-fns/locale';
+import { formatTicketNumber } from '../utils/formatTicketNumber';
 
 const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
@@ -30,7 +31,7 @@ const OrderHistoryCard: React.FC<{ order: Order }> = ({ order }) => {
                 <p className="text-white"><span className="font-semibold text-slate-300">Rifa:</span> {order.raffleTitle}</p>
                 <p className="text-white"><span className="font-semibold text-slate-300">Nombre:</span> {order.name}</p>
                 <p className="text-white"><span className="font-semibold text-slate-300">Total:</span> ${order.total.toFixed(2)} MXN</p>
-                <p className="text-white"><span className="font-semibold text-slate-300">Boletos:</span> <span className="font-mono bg-background-primary px-2 py-1 rounded">{order.tickets.join(', ')}</span></p>
+                <p className="text-white"><span className="font-semibold text-slate-300">Boletos:</span> <span className="font-mono bg-background-primary px-2 py-1 rounded">{order.tickets.map(t => formatTicketNumber(t, (order as any).raffle?.tickets ?? 9999)).join(', ')}</span></p>
                 <p className="text-slate-400"><span className="font-semibold">Fecha de apartado:</span> {format(order.createdAt, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}</p>
                 {order.status === OrderStatus.PENDING && (
                      <p className="text-yellow-400"><span className="font-semibold">Vence:</span> {format(order.expiresAt, "dd 'de' MMMM, yyyy 'a las' HH:mm", { locale: es })}</p>

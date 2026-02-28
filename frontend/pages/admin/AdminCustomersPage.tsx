@@ -12,6 +12,7 @@ import {
 import { Order } from '../../types';
 import { getOrders, updateOrder, releaseOrder, editOrder, markOrderAsPending } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
+import { formatTicketNumber } from '../../utils/formatTicketNumber';
 
 const AdminCustomersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -286,7 +287,7 @@ const AdminCustomersPage: React.FC = () => {
                                                 🏷️ Folio: <span className="font-bold">{order.folio}</span>
                                             </p>
                                         )}
-                                        <p>🎫 Boletos: {order.tickets?.join(', ') || 'N/A'}</p>
+                                        <p>🎫 Boletos: {order.tickets?.map(t => formatTicketNumber(t, (order as any).raffle?.tickets ?? 9999)).join(', ') || 'N/A'}</p>
                                         <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -445,7 +446,7 @@ const AdminCustomersPage: React.FC = () => {
                                             </div>
                                             <div>
                                                 <span className="text-sm text-gray-600">Números:</span>
-                                                <p className="font-medium">{selectedOrder.tickets.join(', ')}</p>
+                                                <p className="font-medium">{selectedOrder.tickets.map(t => formatTicketNumber(t, (selectedOrder as any).raffle?.tickets ?? 9999)).join(', ')}</p>
                                             </div>
                                         </div>
                                     </div>

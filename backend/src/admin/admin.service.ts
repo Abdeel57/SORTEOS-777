@@ -180,6 +180,7 @@ export class AdminService {
                 title: true,
                 price: true,
                 status: true,
+                tickets: true,
               },
             },
             user: {

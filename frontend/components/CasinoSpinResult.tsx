@@ -3,16 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dices, ShoppingCart, RefreshCw, X, Ticket } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import confetti from 'canvas-confetti';
+import { formatTicketNumber } from '../utils/formatTicketNumber';
 
 interface CasinoSpinResultProps {
     selectedTickets: number[];
     totalPrice: number;
+    totalTickets?: number;
     onBuy: () => void;
     onSpinAgain: () => void;
     onClose: () => void;
 }
 
-const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, totalPrice, onBuy, onSpinAgain, onClose }) => {
+const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, totalPrice, totalTickets = 9999, onBuy, onSpinAgain, onClose }) => {
     const { appearance, preCalculatedTextColors } = useTheme();
     const accentColor = appearance?.colors?.accent || '#00ff00';
     const [isSpinning, setIsSpinning] = useState(true);
@@ -23,8 +25,9 @@ const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, to
         setIsSpinning(true);
 
         // Rapidly change numbers
+        const maxNum = totalTickets > 0 ? totalTickets : 9999;
         const interval = setInterval(() => {
-            setDisplayNumber(Math.floor(Math.random() * 9999));
+            setDisplayNumber(Math.floor(Math.random() * maxNum) + 1);
         }, 50);
 
         // Stop after 1.5s
@@ -44,7 +47,7 @@ const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, to
             clearInterval(interval);
             clearTimeout(timer);
         };
-    }, [selectedTickets, accentColor]);
+    }, [selectedTickets, accentColor, totalTickets]);
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -89,7 +92,7 @@ const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, to
                             >
                                 <h2 className="text-2xl font-bold text-white mb-2">Buscando tu suerte...</h2>
                                 <div className="text-5xl font-mono font-bold text-slate-500 opacity-50">
-                                    {displayNumber.toString().padStart(4, '0')}
+                                    {formatTicketNumber(displayNumber, totalTickets)}
                                 </div>
                             </motion.div>
                         ) : (
@@ -114,7 +117,7 @@ const CasinoSpinResult: React.FC<CasinoSpinResultProps> = ({ selectedTickets, to
                                                 key={ticket}
                                                 className="px-2 py-1 rounded text-xs font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700"
                                             >
-                                                {ticket.toString().padStart(3, '0')}
+                                                {formatTicketNumber(ticket, totalTickets)}
                                             </span>
                                         ))}
                                     </div>

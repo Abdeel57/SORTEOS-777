@@ -6,6 +6,7 @@ import { Raffle, Order, Winner } from '../../types';
 import Spinner from '../../components/Spinner';
 import WinnerForm from '../../components/admin/WinnerForm';
 import WinnerDrawAnimation from '../../components/admin/WinnerDrawAnimation';
+import { formatTicketNumber } from '../../utils/formatTicketNumber';
 
 const AdminWinnersPage = () => {
     const [finishedRaffles, setFinishedRaffles] = useState<Raffle[]>([]);
@@ -241,6 +242,7 @@ const AdminWinnersPage = () => {
                             <WinnerDrawAnimation
                                 isRunning={isDrawing}
                                 winnerNumber={winner?.ticket || null}
+                                totalTickets={finishedRaffles.find(r => r.id === selectedRaffle)?.tickets}
                                 onComplete={handleAnimationComplete}
                             />
                         </motion.div>
@@ -266,7 +268,7 @@ const AdminWinnersPage = () => {
                                         <div className="bg-white rounded-2xl shadow-xl border-4 border-yellow-400 p-8 mb-6 transform hover:scale-105 transition-transform">
                                             <p className="text-lg font-semibold text-gray-600 mb-2">Boleto Ganador</p>
                                             <p className="text-8xl font-bold text-yellow-500 my-4 drop-shadow-lg">
-                                                {winner.ticket}
+                                                {formatTicketNumber(winner.ticket, finishedRaffles.find(r => r.id === selectedRaffle)?.tickets ?? 9999)}
                                             </p>
                                             <div className="border-t-2 border-gray-200 pt-4 mt-4">
                                                 <p className="text-2xl font-bold text-gray-900 mb-2">

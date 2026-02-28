@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Order } from '../../types';
 import { User, Phone, MapPin, ShoppingCart, DollarSign, FileText, Save, X } from 'lucide-react';
+import { formatTicketNumber } from '../../utils/formatTicketNumber';
 
 interface EditOrderFormProps {
     order: Order;
@@ -191,7 +192,7 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                     </div>
                     <div className="flex justify-between">
                         <span className="text-gray-600">Boletos:</span>
-                        <span className="font-medium text-gray-900">{order.tickets.join(', ')}</span>
+                        <span className="font-medium text-gray-900">{order.tickets.map(t => formatTicketNumber(t, (order as any).raffle?.tickets ?? 9999)).join(', ')}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-gray-600">Fecha de Creación:</span>

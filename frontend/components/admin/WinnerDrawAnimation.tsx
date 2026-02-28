@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Sparkles } from 'lucide-react';
+import { formatTicketNumber } from '../../utils/formatTicketNumber';
 
 interface WinnerDrawAnimationProps {
     isRunning: boolean;
     winnerNumber: number | null;
+    totalTickets?: number;
     onComplete?: () => void;
 }
 
-const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, winnerNumber, onComplete }) => {
+const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, winnerNumber, totalTickets = 9999, onComplete }) => {
     const [displayNumber, setDisplayNumber] = useState<number>(0);
     const [countdown, setCountdown] = useState<number>(3);
     const [showResult, setShowResult] = useState(false);
@@ -19,9 +21,10 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
             setShowResult(false);
             setCountdown(3);
             
-            // Fast random numbers
+            // Fast random numbers (within raffle range)
+            const maxNum = totalTickets > 0 ? totalTickets : 9999;
             const interval = setInterval(() => {
-                setDisplayNumber(Math.floor(Math.random() * 1000) + 1);
+                setDisplayNumber(Math.floor(Math.random() * maxNum) + 1);
             }, 100);
 
             // Countdown timer
@@ -130,7 +133,7 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                             transition={{ duration: 0.1 }}
                             className="text-8xl font-bold text-white drop-shadow-2xl"
                         >
-                            {displayNumber.toString().padStart(4, '0')}
+                            {formatTicketNumber(displayNumber, totalTickets)}
                         </motion.div>
 
                         {/* Contador regresivo */}
@@ -200,7 +203,7 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                         >
                             <p className="text-3xl font-bold text-white mb-4">¡¡¡ GANADOR !!!</p>
                             <div className="text-9xl font-bold text-yellow-400 drop-shadow-2xl">
-                                {displayNumber.toString().padStart(4, '0')}
+                                {formatTicketNumber(displayNumber, totalTickets)}
                             </div>
                         </motion.div>
                     </motion.div>

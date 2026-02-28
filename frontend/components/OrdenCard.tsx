@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { formatTicketNumber } from '../utils/formatTicketNumber';
 
 interface OrdenCardProps {
     orden: {
@@ -8,6 +9,7 @@ interface OrdenCardProps {
         rifa: {
             id: string;
             titulo: string;
+            tickets?: number;
         };
         boletos: number[];
         cantidadBoletos: number;
@@ -82,7 +84,7 @@ const OrdenCard: React.FC<OrdenCardProps> = ({ orden, isExpanded, onToggle }) =>
                                 key={idx}
                                 className="bg-slate-800 text-white px-3 py-1.5 rounded text-sm font-mono border border-slate-700 hover:bg-slate-700 transition-colors"
                             >
-                                {boleto}
+                                {formatTicketNumber(boleto, orden.rifa.tickets ?? 9999)}
                             </span>
                         ))}
                     </div>
